@@ -2,8 +2,6 @@
  * Created by rockyl on 2018/11/16.
  */
 
-const resolve = require('rollup-plugin-node-resolve');
-const commonjs = require('rollup-plugin-commonjs');
 const typescript = require('rollup-plugin-typescript');
 const {uglify} = require('rollup-plugin-uglify');
 
@@ -13,34 +11,26 @@ export default {
 	input: 'src/index.ts',
 	output: [
 		{
-			file: `dist/index.cjs.js`,
+			file: `dist/index.js`,
+			sourcemap: true,
 			format: 'cjs',
 		},
 		{
 			file: `dist/index.es.js`,
+			sourcemap: true,
 			format: 'es',
 		},
 		{
-			file: `dist/scilla.js`,
-			format: 'umd',
-			name,
-		},
-		{
-			file: `dist/index.js`,
+			file: `dist/index.umd.js`,
+			sourcemap: true,
 			format: 'umd',
 			name,
 		}
 	],
 	plugins: [
-		resolve({
-			browser: true,
-		}),
 		typescript({
 			typescript: require('typescript'),
-			tslib: require('tslib'),
-			declaration: false,
 		}),
-		commonjs(),
 		//uglify({}),
 	]
 };
