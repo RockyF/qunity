@@ -7,3 +7,4 @@ export * from './Component';
 export * from './ComponentManager';
 export * from './EntityAdaptor';
 export * from './IEntity';
+export * from './utils';

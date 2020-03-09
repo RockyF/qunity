@@ -26,6 +26,10 @@ export declare class ComponentManager {
      */
     onUpdate(t: number): void;
     /**
+     * 交互事件
+     */
+    onInteract(type: string, e: any): void;
+    /**
      * 时钟更新回溯
      * @param t
      */

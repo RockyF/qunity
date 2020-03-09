@@ -23,6 +23,7 @@ export interface IEntityAdaptor {
 	readonly isActive: boolean;
 
 	invokeLifecycle(type: string, ...args);
+	invokeInteractionEvent(type: string, ...args);
 }
 
 /**
@@ -59,7 +60,7 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	}
 
 	/**
-	 * 触发声明周期方法
+	 * 触发生命周期方法
 	 * @param type
 	 * @param args
 	 */
@@ -70,5 +71,14 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 				this._components.onUpdate(delta);
 				break;
 		}
+	}
+
+	/**
+	 * 触发交互事件方法
+	 * @param type
+	 * @param e
+	 */
+	invokeInteractionEvent(type: string, e) {
+		this._components.onInteract(type, e);
 	}
 }

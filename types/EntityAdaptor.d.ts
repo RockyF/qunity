@@ -20,6 +20,7 @@ export interface IEntityAdaptor {
      */
     readonly isActive: boolean;
     invokeLifecycle(type: string, ...args: any[]): any;
+    invokeInteractionEvent(type: string, ...args: any[]): any;
 }
 /**
  * 实体适配器基类
@@ -41,9 +42,15 @@ export declare abstract class EntityAdaptorBase implements IEntityAdaptor {
     abstract get isActive(): boolean;
     constructor(entity: any, app: Application);
     /**
-     * 触发声明周期方法
+     * 触发生命周期方法
      * @param type
      * @param args
      */
     invokeLifecycle(type: string, ...args: any[]): void;
+    /**
+     * 触发交互事件方法
+     * @param type
+     * @param e
+     */
+    invokeInteractionEvent(type: string, e: any): void;
 }

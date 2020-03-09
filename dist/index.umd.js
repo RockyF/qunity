@@ -329,6 +329,16 @@
 	            this.afterUpdate(t);
 	        }
 	    };
+	    Component.prototype.onClick = function (e) {
+	    };
+	    Component.prototype.onMouseDown = function (e) {
+	    };
+	    Component.prototype.onMouseMove = function (e) {
+	    };
+	    Component.prototype.onMouseUp = function (e) {
+	    };
+	    Component.prototype.onMouseUpOutside = function (e) {
+	    };
 	    return Component;
 	}(HashObject));
 
@@ -378,6 +388,17 @@
 	    ComponentManager.prototype.onUpdate = function (t) {
 	        this.eachComponent(function (component) {
 	            component.$onUpdate(t);
+	        });
+	    };
+	    /**
+	     * 交互事件
+	     */
+	    ComponentManager.prototype.onInteract = function (type, e) {
+	        this.eachComponent(function (component) {
+	            var method = 'on' + type[0].toUpperCase() + type.substr(1);
+	            if (component[method]) {
+	                component[method](e);
+	            }
 	        });
 	    };
 	    /**
@@ -606,7 +627,7 @@
 	        configurable: true
 	    });
 	    /**
-	     * 触发声明周期方法
+	     * 触发生命周期方法
 	     * @param type
 	     * @param args
 	     */
@@ -622,15 +643,80 @@
 	                break;
 	        }
 	    };
+	    /**
+	     * 触发交互事件方法
+	     * @param type
+	     * @param e
+	     */
+	    EntityAdaptorBase.prototype.invokeInteractionEvent = function (type, e) {
+	        this._components.onInteract(type, e);
+	    };
 	    return EntityAdaptorBase;
 	}());
 	//# sourceMappingURL=EntityAdaptor.js.map
+
+	/**
+	 * Created by rockyl on 2020-03-09.
+	 */
+	/**
+	 * 线性插值
+	 * @param begin number
+	 * @param end number
+	 * @param t number
+	 * @param allowOutOfBounds
+	 * @return number
+	 */
+	function lerp(begin, end, t, allowOutOfBounds) {
+	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
+	    if (!allowOutOfBounds) {
+	        t = Math.max(0, Math.min(1, t));
+	    }
+	    var sign = end - begin;
+	    sign = sign > 0 ? 1 : (sign < 0 ? -1 : 0);
+	    var distance = Math.abs(end - begin);
+	    return begin + distance * t * sign;
+	}
+	/**
+	 * 线性插值
+	 * @param begin
+	 * @param end
+	 * @param t number
+	 * @param allowOutOfBounds
+	 * @return number
+	 */
+	function lerpVector2(begin, end, t, allowOutOfBounds) {
+	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
+	    return {
+	        x: lerp(begin.x, end.x, t, allowOutOfBounds),
+	        y: lerp(begin.y, end.y, t, allowOutOfBounds),
+	    };
+	}
+	/**
+	 * 线性插值
+	 * @param begin
+	 * @param end
+	 * @param t number
+	 * @param allowOutOfBounds
+	 * @return number
+	 */
+	function lerpVector3(begin, end, t, allowOutOfBounds) {
+	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
+	    return {
+	        x: lerp(begin.x, end.x, t, allowOutOfBounds),
+	        y: lerp(begin.y, end.y, t, allowOutOfBounds),
+	        z: lerp(begin.z, end.z, t, allowOutOfBounds),
+	    };
+	}
+	//# sourceMappingURL=utils.js.map
 
 	exports.Application = Application;
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
 	exports.EntityAdaptorBase = EntityAdaptorBase;
 	exports.HashObject = HashObject;
+	exports.lerp = lerp;
+	exports.lerpVector2 = lerpVector2;
+	exports.lerpVector3 = lerpVector3;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

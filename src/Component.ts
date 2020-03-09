@@ -16,6 +16,12 @@ export interface IComponent{
 	onUpdate(t: number);
 	afterUpdate(t: number);
 	onDestroy();
+
+	onClick(e);
+	onMouseDown(e);
+	onMouseMove(e);
+	onMouseUp(e);
+	onMouseUpOutside(e);
 }
 
 /**
@@ -139,5 +145,20 @@ export class Component extends HashObject implements IComponent{
 		if (this._enabled) {
 			this.afterUpdate(t);
 		}
+	}
+
+	onClick(e) {
+	}
+
+	onMouseDown(e) {
+	}
+
+	onMouseMove(e) {
+	}
+
+	onMouseUp(e) {
+	}
+
+	onMouseUpOutside(e) {
 	}
 }

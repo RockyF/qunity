@@ -62,6 +62,19 @@ export class ComponentManager {
 	}
 
 	/**
+	 * 交互事件
+	 */
+	onInteract(type: string, e) {
+		this.eachComponent(component => {
+			let method = 'on' + type[0].toUpperCase() + type.substr(1);
+
+			if(component[method]){
+				component[method](e);
+			}
+		})
+	}
+
+	/**
 	 * 时钟更新回溯
 	 * @param t
 	 */
@@ -91,7 +104,7 @@ export class ComponentManager {
 	 */
 	removeComponent(componentId: any, index?: number) {
 		let components;
-		switch(typeof componentId){
+		switch (typeof componentId) {
 			case 'string':
 				components = this._findByName(componentId);
 				break;
@@ -109,7 +122,7 @@ export class ComponentManager {
 	/**
 	 * 移除所有组件
 	 */
-	removeAllComponents(){
+	removeAllComponents() {
 		this._removeAll();
 	}
 
@@ -117,8 +130,8 @@ export class ComponentManager {
 	 * 获取组件
 	 * @param componentId
 	 */
-	getComponent(componentId){
-		switch(typeof componentId){
+	getComponent(componentId) {
+		switch (typeof componentId) {
 			case 'string':
 				return this._getByName(componentId);
 			case 'function':
@@ -130,8 +143,8 @@ export class ComponentManager {
 	 * 获取组件组
 	 * @param componentId
 	 */
-	getComponents(componentId){
-		switch(typeof componentId){
+	getComponents(componentId) {
+		switch (typeof componentId) {
 			case 'string':
 				return this._findByName(componentId);
 			case 'function':

@@ -13,6 +13,11 @@ export interface IComponent {
     onUpdate(t: number): any;
     afterUpdate(t: number): any;
     onDestroy(): any;
+    onClick(e: any): any;
+    onMouseDown(e: any): any;
+    onMouseMove(e: any): any;
+    onMouseUp(e: any): any;
+    onMouseUpOutside(e: any): any;
 }
 /**
  * 组件类
@@ -74,4 +79,9 @@ export declare class Component extends HashObject implements IComponent {
      * @param t
      */
     $afterUpdate(t: number): void;
+    onClick(e: any): void;
+    onMouseDown(e: any): void;
+    onMouseMove(e: any): void;
+    onMouseUp(e: any): void;
+    onMouseUpOutside(e: any): void;
 }
