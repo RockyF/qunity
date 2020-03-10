@@ -7,11 +7,11 @@ export interface IComponent {
     readonly entityAdaptor: IEntityAdaptor;
     readonly entity: any;
     enabled: boolean;
-    onAwake(): any;
+    awake(): any;
+    start(): any;
     onEnable(): any;
     onDisable(): any;
-    onUpdate(t: number): any;
-    afterUpdate(t: number): any;
+    update(t: number): any;
     onDestroy(): any;
     onClick(e: any): any;
     onMouseDown(e: any): any;
@@ -25,6 +25,7 @@ export interface IComponent {
 export declare class Component extends HashObject implements IComponent {
     private _entityAdaptor;
     private _enabled;
+    private _started;
     get entityAdaptor(): IEntityAdaptor;
     get entity(): any;
     constructor();
@@ -44,7 +45,11 @@ export declare class Component extends HashObject implements IComponent {
     /**
      * 当组件被唤醒时
      */
-    onAwake(): void;
+    awake(): void;
+    /**
+     * 当组件开始
+     */
+    start(): void;
     /**
      * 当生效时
      * 仅当实体唤醒状态
@@ -59,12 +64,7 @@ export declare class Component extends HashObject implements IComponent {
      * 时钟更新
      * @param t
      */
-    onUpdate(t: number): void;
-    /**
-     * 时钟更新回溯
-     * @param t
-     */
-    afterUpdate(t: number): void;
+    update(t: number): void;
     /**
      * 当被销毁时
      */
@@ -74,11 +74,6 @@ export declare class Component extends HashObject implements IComponent {
      * @param t
      */
     $onUpdate(t: number): void;
-    /**
-     * @private
-     * @param t
-     */
-    $afterUpdate(t: number): void;
     onClick(e: any): void;
     onMouseDown(e: any): void;
     onMouseMove(e: any): void;

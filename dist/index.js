@@ -221,7 +221,8 @@ var Component = /** @class */ (function (_super) {
     __extends(Component, _super);
     function Component() {
         var _this = _super.call(this) || this;
-        _this._enabled = true;
+        _this._enabled = false;
+        _this._started = false;
         return _this;
     }
     Object.defineProperty(Component.prototype, "entityAdaptor", {
@@ -248,8 +249,9 @@ var Component = /** @class */ (function (_super) {
         set: function (value) {
             if (this._enabled != value) {
                 this._enabled = value;
-                if (this._entityAdaptor && this._entityAdaptor.isActive) {
+                if (this._entityAdaptor && this._entityAdaptor.getActive()) {
                     if (value) {
+                        this._started = false;
                         this.onEnable();
                     }
                     else {
@@ -266,7 +268,8 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.$awake = function (entityAdaptor) {
         this._entityAdaptor = entityAdaptor;
-        this.onAwake();
+        this.enabled = true;
+        this.awake();
     };
     /**
      * @private
@@ -278,7 +281,12 @@ var Component = /** @class */ (function (_super) {
     /**
      * 当组件被唤醒时
      */
-    Component.prototype.onAwake = function () {
+    Component.prototype.awake = function () {
+    };
+    /**
+     * 当组件开始
+     */
+    Component.prototype.start = function () {
     };
     /**
      * 当生效时
@@ -296,13 +304,7 @@ var Component = /** @class */ (function (_super) {
      * 时钟更新
      * @param t
      */
-    Component.prototype.onUpdate = function (t) {
-    };
-    /**
-     * 时钟更新回溯
-     * @param t
-     */
-    Component.prototype.afterUpdate = function (t) {
+    Component.prototype.update = function (t) {
     };
     /**
      * 当被销毁时
@@ -315,16 +317,11 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.$onUpdate = function (t) {
         if (this._enabled) {
-            this.onUpdate(t);
-        }
-    };
-    /**
-     * @private
-     * @param t
-     */
-    Component.prototype.$afterUpdate = function (t) {
-        if (this._enabled) {
-            this.afterUpdate(t);
+            if (!this._started) {
+                this._started = true;
+                this.start();
+            }
+            this.update(t);
         }
     };
     Component.prototype.onClick = function (e) {
@@ -380,12 +377,30 @@ var ComponentManager = /** @class */ (function () {
         this._components.some(callback);
     };
     /**
+     * 设置激活状态
+     * @param active
+     */
+    ComponentManager.prototype.setActive = function (active) {
+        this.eachComponent(function (component) {
+            if (component.enabled) {
+                if (active) {
+                    component.onEnable();
+                }
+                else {
+                    component.onDisable();
+                }
+            }
+        });
+    };
+    /**
      * 时钟更新
      * @param t
      */
     ComponentManager.prototype.onUpdate = function (t) {
         this.eachComponent(function (component) {
-            component.$onUpdate(t);
+            if (component.enabled) {
+                component.$onUpdate(t);
+            }
         });
     };
     /**
@@ -393,19 +408,12 @@ var ComponentManager = /** @class */ (function () {
      */
     ComponentManager.prototype.onInteract = function (type, e) {
         this.eachComponent(function (component) {
-            var method = 'on' + type[0].toUpperCase() + type.substr(1);
-            if (component[method]) {
-                component[method](e);
+            if (component.enabled) {
+                var method = 'on' + type[0].toUpperCase() + type.substr(1);
+                if (component[method]) {
+                    component[method](e);
+                }
             }
-        });
-    };
-    /**
-     * 时钟更新回溯
-     * @param t
-     */
-    ComponentManager.prototype.afterUpdate = function (t) {
-        this.eachComponent(function (component) {
-            component.$afterUpdate(t);
         });
     };
     /**
@@ -582,6 +590,7 @@ var ComponentManager = /** @class */ (function () {
     ComponentManager.prototype.onRemoveComponent = function (component) {
         this._componentsNameMapping = {};
         this._componentsDefMapping = {};
+        component.enabled = false;
         component.$destroy();
     };
     ComponentManager.prototype.$instantiateComponent = function (componentId) {
@@ -603,6 +612,7 @@ var EntityAdaptorBase = /** @class */ (function () {
         this._entity = entity;
         this._components = new ComponentManager(this, app);
         entity.entityAdaptor = this;
+        this.applyProxy();
     }
     Object.defineProperty(EntityAdaptorBase.prototype, "components", {
         /**
@@ -625,6 +635,34 @@ var EntityAdaptorBase = /** @class */ (function () {
         configurable: true
     });
     /**
+     * @inheritDoc
+     */
+    EntityAdaptorBase.prototype.getActive = function () {
+        return this._entity.$active;
+    };
+    /**
+     * @inheritDoc
+     */
+    EntityAdaptorBase.prototype.setActive = function (v) {
+        if (v !== this.getActive()) {
+            this._entity.$active = v;
+            this._components.setActive(v);
+        }
+    };
+    /**
+     * 应用代理
+     */
+    EntityAdaptorBase.prototype.applyProxy = function () {
+        var entity = this._entity;
+        entity.$active = true;
+        Object.defineProperty(entity, 'active', {
+            get: function () {
+                return this.entityAdaptor.getActive();
+            }
+        });
+        entity.setActive = this.setActive.bind(this);
+    };
+    /**
      * 触发生命周期方法
      * @param type
      * @param args
@@ -633,6 +671,9 @@ var EntityAdaptorBase = /** @class */ (function () {
         var args = [];
         for (var _i = 1; _i < arguments.length; _i++) {
             args[_i - 1] = arguments[_i];
+        }
+        if (!this.getActive()) {
+            return;
         }
         switch (type) {
             case 'update':
@@ -647,6 +688,9 @@ var EntityAdaptorBase = /** @class */ (function () {
      * @param e
      */
     EntityAdaptorBase.prototype.invokeInteractionEvent = function (type, e) {
+        if (!this.getActive()) {
+            return;
+        }
         this._components.onInteract(type, e);
     };
     return EntityAdaptorBase;

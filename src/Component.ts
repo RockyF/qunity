@@ -5,31 +5,41 @@
 import {HashObject} from "./HashObject";
 import {IEntityAdaptor} from "./EntityAdaptor";
 
-export interface IComponent{
-	readonly entityAdaptor:IEntityAdaptor;
-	readonly entity:any;
+export interface IComponent {
+	readonly entityAdaptor: IEntityAdaptor;
+	readonly entity: any;
 	enabled: boolean;
 
-	onAwake();
+	awake();
+
+	start();
+
 	onEnable();
+
 	onDisable();
-	onUpdate(t: number);
-	afterUpdate(t: number);
+
+	update(t: number);
+
 	onDestroy();
 
 	onClick(e);
+
 	onMouseDown(e);
+
 	onMouseMove(e);
+
 	onMouseUp(e);
+
 	onMouseUpOutside(e);
 }
 
 /**
  * 组件类
  */
-export class Component extends HashObject implements IComponent{
+export class Component extends HashObject implements IComponent {
 	private _entityAdaptor: IEntityAdaptor;
-	private _enabled: boolean = true;
+	private _enabled: boolean = false;
+	private _started: boolean = false;
 
 	get entityAdaptor(): IEntityAdaptor {
 		return this._entityAdaptor;
@@ -55,8 +65,9 @@ export class Component extends HashObject implements IComponent{
 		if (this._enabled != value) {
 			this._enabled = value;
 
-			if (this._entityAdaptor && this._entityAdaptor.isActive) {
+			if (this._entityAdaptor && this._entityAdaptor.getActive()) {
 				if (value) {
+					this._started = false;
 					this.onEnable();
 				} else {
 					this.onDisable();
@@ -70,7 +81,8 @@ export class Component extends HashObject implements IComponent{
 	 */
 	$awake(entityAdaptor: IEntityAdaptor) {
 		this._entityAdaptor = entityAdaptor;
-		this.onAwake();
+		this.enabled = true;
+		this.awake();
 	}
 
 	/**
@@ -84,7 +96,14 @@ export class Component extends HashObject implements IComponent{
 	/**
 	 * 当组件被唤醒时
 	 */
-	onAwake() {
+	awake() {
+
+	}
+
+	/**
+	 * 当组件开始
+	 */
+	start() {
 
 	}
 
@@ -108,15 +127,7 @@ export class Component extends HashObject implements IComponent{
 	 * 时钟更新
 	 * @param t
 	 */
-	onUpdate(t: number) {
-
-	}
-
-	/**
-	 * 时钟更新回溯
-	 * @param t
-	 */
-	afterUpdate(t: number) {
+	update(t: number) {
 
 	}
 
@@ -133,17 +144,11 @@ export class Component extends HashObject implements IComponent{
 	 */
 	$onUpdate(t: number) {
 		if (this._enabled) {
-			this.onUpdate(t);
-		}
-	}
-
-	/**
-	 * @private
-	 * @param t
-	 */
-	$afterUpdate(t: number) {
-		if (this._enabled) {
-			this.afterUpdate(t);
+			if (!this._started) {
+				this._started = true;
+				this.start();
+			}
+			this.update(t);
 		}
 	}
 

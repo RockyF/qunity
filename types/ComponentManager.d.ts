@@ -21,6 +21,11 @@ export declare class ComponentManager {
      */
     eachComponent(callback: (component: Component, index: number) => unknown): void;
     /**
+     * 设置激活状态
+     * @param active
+     */
+    setActive(active: boolean): void;
+    /**
      * 时钟更新
      * @param t
      */
@@ -29,11 +34,6 @@ export declare class ComponentManager {
      * 交互事件
      */
     onInteract(type: string, e: any): void;
-    /**
-     * 时钟更新回溯
-     * @param t
-     */
-    afterUpdate(t: number): void;
     /**
      * 添加组件
      * @param componentId

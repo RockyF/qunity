@@ -52,12 +52,30 @@ export class ComponentManager {
 	}
 
 	/**
+	 * 设置激活状态
+	 * @param active
+	 */
+	setActive(active: boolean) {
+		this.eachComponent(component => {
+			if (component.enabled) {
+				if (active) {
+					component.onEnable();
+				} else {
+					component.onDisable();
+				}
+			}
+		})
+	}
+
+	/**
 	 * 时钟更新
 	 * @param t
 	 */
 	onUpdate(t: number) {
 		this.eachComponent(component => {
-			component.$onUpdate(t);
+			if (component.enabled) {
+				component.$onUpdate(t);
+			}
 		})
 	}
 
@@ -66,21 +84,13 @@ export class ComponentManager {
 	 */
 	onInteract(type: string, e) {
 		this.eachComponent(component => {
-			let method = 'on' + type[0].toUpperCase() + type.substr(1);
+			if (component.enabled) {
+				let method = 'on' + type[0].toUpperCase() + type.substr(1);
 
-			if(component[method]){
-				component[method](e);
+				if (component[method]) {
+					component[method](e);
+				}
 			}
-		})
-	}
-
-	/**
-	 * 时钟更新回溯
-	 * @param t
-	 */
-	afterUpdate(t: number) {
-		this.eachComponent(component => {
-			component.$afterUpdate(t);
 		})
 	}
 
@@ -276,6 +286,7 @@ export class ComponentManager {
 		this._componentsNameMapping = {};
 		this._componentsDefMapping = {};
 
+		component.enabled = false;
 		component.$destroy();
 	}
 

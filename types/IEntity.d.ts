@@ -6,6 +6,15 @@
  */
 export interface IEntity {
     /**
+     * 激活状态
+     */
+    readonly active: boolean;
+    /**
+     * 设置激活状态
+     * @param active
+     */
+    setActive(active: boolean): any;
+    /**
      * 添加组件
      * @param componentId
      */

@@ -16,9 +16,14 @@ export interface IEntityAdaptor {
      */
     readonly components: ComponentManager;
     /**
-     * 是否激活
+     * 获取激活状态
      */
-    readonly isActive: boolean;
+    getActive(): boolean;
+    /**
+     * 设置激活状态
+     * @param active
+     */
+    setActive(active: boolean): any;
     invokeLifecycle(type: string, ...args: any[]): any;
     invokeInteractionEvent(type: string, ...args: any[]): any;
 }
@@ -26,8 +31,8 @@ export interface IEntityAdaptor {
  * 实体适配器基类
  */
 export declare abstract class EntityAdaptorBase implements IEntityAdaptor {
-    private readonly _components;
-    private readonly _entity;
+    protected readonly _components: ComponentManager;
+    protected readonly _entity: any;
     /**
      * @inheritDoc
      */
@@ -39,8 +44,16 @@ export declare abstract class EntityAdaptorBase implements IEntityAdaptor {
     /**
      * @inheritDoc
      */
-    abstract get isActive(): boolean;
+    getActive(): boolean;
+    /**
+     * @inheritDoc
+     */
+    setActive(v: boolean): void;
     constructor(entity: any, app: Application);
+    /**
+     * 应用代理
+     */
+    applyProxy(): void;
     /**
      * 触发生命周期方法
      * @param type
