@@ -2,6 +2,8 @@
  * Created by rockyl on 2020-03-09.
  */
 
+import {IComponent} from "./Component";
+
 /**
  * 实体接口
  */
@@ -21,14 +23,14 @@ export interface IEntity {
 	 * 添加组件
 	 * @param componentId
 	 */
-	addComponent(componentId: string | Function);
+	addComponent(componentId: string | Function): IComponent;
 
 	/**
 	 * 移除组件
 	 * @param componentId
 	 * @param index
 	 */
-	removeComponent(componentId: string | Function, index?: number);
+	removeComponent(componentId: string | Function, index?: number): IComponent[];
 
 	/**
 	 * 移除所有组件
@@ -39,11 +41,11 @@ export interface IEntity {
 	 * 获取组件
 	 * @param componentId
 	 */
-	getComponent(componentId: string | Function);
+	getComponent(componentId: string | Function): IComponent;
 
 	/**
 	 * 获取组件组
 	 * @param componentId
 	 */
-	getComponents(componentId: string | Function);
+	getComponents(componentId: string | Function): IComponent[];
 }

@@ -3,15 +3,19 @@
  */
 
 import {IEntityAdaptor} from "./EntityAdaptor";
-import {Component} from "./Component";
 import {IEntity} from "./IEntity";
+import {instantiate} from "./interpreter";
 
 export interface AdaptorOptions {
 	stage: any;
 	EntityAdaptor: any;
-	traverseFunc: (node, callback: (node) => boolean | void) => void;
+	addDisplayFunc: (node: IEntity, parent: IEntity) => void;
+	traverseFunc: (node: IEntity, callback: (node) => boolean | void) => void;
 	loadResourceFunc: (configs, onProgress?, onComplete?) => void;
 	getResFunc: (name) => any;
+	protocols?: {
+		[key: string]: (app: Application, key: string, value: any, pid?:number) => any,
+	};
 }
 
 /**
@@ -21,6 +25,15 @@ export class Application {
 	private _options: AdaptorOptions;
 	private _componentDefs: any = {};
 	private _entityDefs: any = {};
+
+	entityMap = {};
+
+	/**
+	 * 配置
+	 */
+	get options(): AdaptorOptions{
+		return this._options;
+	}
 
 	/**
 	 * 舞台实例
@@ -37,6 +50,14 @@ export class Application {
 	setupAdaptor(options: AdaptorOptions): (delta: number) => void {
 		this._options = options;
 		return this._mainLoop;
+	}
+
+	/**
+	 * 实例化场景或者预制体
+	 * @param docConfig
+	 */
+	instantiate(docConfig: any) {
+		return instantiate(this, docConfig);
 	}
 
 	/**
@@ -81,7 +102,7 @@ export class Application {
 	registerEntityDefs(defs) {
 		if (defs) {
 			for (let type in defs) {
-				this.registerEntityDef(type, defs[type]);
+				this.registerEntityDef(type, defs[type].def);
 			}
 		}
 	}
@@ -101,6 +122,24 @@ export class Application {
 		} else {
 			throw new Error(`type [${type}] not exists.`)
 		}
+	}
+
+	/**
+	 * 添加显示节点
+	 * @param node
+	 * @param parent
+	 */
+	addDisplayNode(node: IEntity, parent: IEntity) {
+		this._options.addDisplayFunc(node, parent);
+	}
+
+	/**
+	 * 遍历显示节点
+	 * @param node
+	 * @param callback
+	 */
+	traverseDisplayNode(node: IEntity, callback: (node) => boolean | void) {
+		this._options.traverseFunc(node, callback);
 	}
 
 	/**
@@ -164,7 +203,7 @@ export class Application {
 			return;
 		}
 		const className = def['__class__'];
-		if(!className){
+		if (!className) {
 			console.warn(`component [${id}] is not registered.`);
 			return;
 		}

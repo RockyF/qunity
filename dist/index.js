@@ -3,6 +3,119 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 
 /**
+ * Created by rockyl on 2020-03-11.
+ */
+var _a;
+var Protocols;
+(function (Protocols) {
+    Protocols["RES"] = "res://";
+    Protocols["ENTITY"] = "entity://";
+})(Protocols || (Protocols = {}));
+var protocols = (_a = {},
+    _a[Protocols.RES] = res,
+    _a[Protocols.ENTITY] = entity,
+    _a);
+function res(app, key, value) {
+    var trulyValue;
+    var uuid = value.replace(Protocols.RES, '');
+    trulyValue = app.getRes(uuid);
+    return trulyValue;
+}
+function entity(app, key, value, pid) {
+    var trulyValue;
+    var uuid = transPrefabUUID(value.replace(Protocols.ENTITY, ''), pid);
+    trulyValue = app.entityMap[uuid];
+    return trulyValue;
+}
+function transPrefabUUID(uuid, pid) {
+    return pid ? pid + '_' + uuid : uuid;
+}
+
+/**
+ * Created by rockyl on 2020-03-10.
+ */
+var prefabID = 0;
+/**
+ * 实例化节点树
+ * @param app
+ * @param docConfig
+ */
+function instantiate(app, docConfig) {
+    var pid;
+    if (docConfig.docType === 'prefab') {
+        pid = ++prefabID;
+    }
+    var rootEntity = setupEntityTree(app, docConfig, pid);
+    setupComponent(app, docConfig, rootEntity, pid);
+    return rootEntity;
+}
+function setupEntityTree(app, config, pid) {
+    var entity = null;
+    if (config) {
+        var type = config.type, name = config.name, uuid = config.uuid, children = config.children;
+        if (pid !== undefined && uuid !== undefined) {
+            uuid = pid + '_' + uuid;
+        }
+        entity = app.createEntity(type);
+        if (name) {
+            entity['name'] = name;
+        }
+        entity['uuid'] = uuid;
+        injectProps(app, entity, config.props);
+        app.entityMap[uuid] = entity;
+        if (children) {
+            for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
+                var child = children_1[_i];
+                var childEntity = setupEntityTree(app, child, pid);
+                app.addDisplayNode(childEntity, entity);
+            }
+        }
+    }
+    return entity;
+}
+function setupComponent(app, config, entity, pid) {
+    for (var i = 0, li = entity.children.length; i < li; i++) {
+        var child = entity.children[i];
+        var comps = config.children[i].comps;
+        if (comps) {
+            for (var _i = 0, comps_1 = comps; _i < comps_1.length; _i++) {
+                var comp = comps_1[_i];
+                var component = child.addComponent(comp.id);
+                injectProps(app, component, comp.props, pid);
+            }
+        }
+    }
+}
+function injectProps(app, target, props, pid) {
+    if (props) {
+        for (var field in props) {
+            var value = props[field];
+            var trulyValue = value;
+            if (typeof value === 'string') {
+                var hit = void 0;
+                var protocolGroups = [protocols, app.options.protocols];
+                for (var _i = 0, protocolGroups_1 = protocolGroups; _i < protocolGroups_1.length; _i++) {
+                    var protocols_1 = protocolGroups_1[_i];
+                    for (var protocol in protocols_1) {
+                        if (value.indexOf(protocol) === 0) {
+                            var protocolFunc = protocols_1[protocol];
+                            trulyValue = protocolFunc(app, field, value, pid);
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (hit) {
+                        break;
+                    }
+                }
+            }
+            target[field] = trulyValue;
+        }
+    }
+}
+//# sourceMappingURL=interpreter.js.map
+
+/**
  * Created by rockyl on 2020-03-08.
  */
 /**
@@ -13,6 +126,7 @@ var Application = /** @class */ (function () {
         var _this = this;
         this._componentDefs = {};
         this._entityDefs = {};
+        this.entityMap = {};
         /**
          * 主循环方法，需要在适配器的实现中调用
          * @param delta
@@ -22,6 +136,16 @@ var Application = /** @class */ (function () {
             _this._options.traverseFunc(_this._options.stage, _this._onHit.bind(_this, delta));
         };
     }
+    Object.defineProperty(Application.prototype, "options", {
+        /**
+         * 配置
+         */
+        get: function () {
+            return this._options;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Application.prototype, "stage", {
         /**
          * 舞台实例
@@ -40,6 +164,13 @@ var Application = /** @class */ (function () {
     Application.prototype.setupAdaptor = function (options) {
         this._options = options;
         return this._mainLoop;
+    };
+    /**
+     * 实例化场景或者预制体
+     * @param docConfig
+     */
+    Application.prototype.instantiate = function (docConfig) {
+        return instantiate(this, docConfig);
     };
     /**
      * 注册组件类
@@ -80,7 +211,7 @@ var Application = /** @class */ (function () {
     Application.prototype.registerEntityDefs = function (defs) {
         if (defs) {
             for (var type in defs) {
-                this.registerEntityDef(type, defs[type]);
+                this.registerEntityDef(type, defs[type].def);
             }
         }
     };
@@ -98,6 +229,22 @@ var Application = /** @class */ (function () {
         else {
             throw new Error("type [" + type + "] not exists.");
         }
+    };
+    /**
+     * 添加显示节点
+     * @param node
+     * @param parent
+     */
+    Application.prototype.addDisplayNode = function (node, parent) {
+        this._options.addDisplayFunc(node, parent);
+    };
+    /**
+     * 遍历显示节点
+     * @param node
+     * @param callback
+     */
+    Application.prototype.traverseDisplayNode = function (node, callback) {
+        this._options.traverseFunc(node, callback);
     };
     /**
      * 加载资源
@@ -336,6 +483,7 @@ var Component = /** @class */ (function (_super) {
     };
     return Component;
 }(HashObject));
+//# sourceMappingURL=Component.js.map
 
 /**
  * Created by rockyl on 2019-07-29.
@@ -353,11 +501,11 @@ var ComponentManager = /** @class */ (function () {
     ComponentManager.prototype.applyProxy = function () {
         var _this = this;
         var entity = this._entityAdaptor.entity;
-        entity.addComponent = function (componentId) {
-            _this.addComponent(componentId);
+        entity.addComponent = function (componentId, props) {
+            return _this.addComponent(componentId);
         };
         entity.removeComponent = function (componentId, index) {
-            _this.removeComponent(componentId, index);
+            return _this.removeComponent(componentId, index);
         };
         entity.removeAllComponents = function () {
             _this.removeAllComponents();
@@ -426,6 +574,7 @@ var ComponentManager = /** @class */ (function () {
             return;
         }
         this._add(component);
+        return component;
     };
     /**
      * 移除组件
@@ -446,6 +595,7 @@ var ComponentManager = /** @class */ (function () {
             components = [components[index]];
         }
         this._remove(components);
+        return components;
     };
     /**
      * 移除所有组件

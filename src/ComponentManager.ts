@@ -26,11 +26,11 @@ export class ComponentManager {
 	applyProxy() {
 		let entity = this._entityAdaptor.entity;
 
-		entity.addComponent = (componentId: string | Function) => {
-			this.addComponent(componentId);
+		entity.addComponent = (componentId: string | Function, props: any) => {
+			return this.addComponent(componentId);
 		};
 		entity.removeComponent = (componentId: string | Function, index?: number) => {
-			this.removeComponent(componentId, index);
+			return this.removeComponent(componentId, index);
 		};
 		entity.removeAllComponents = () => {
 			this.removeAllComponents();
@@ -104,7 +104,9 @@ export class ComponentManager {
 			return;
 		}
 
-		this._add(component)
+		this._add(component);
+
+		return component;
 	}
 
 	/**
@@ -127,6 +129,8 @@ export class ComponentManager {
 		}
 
 		this._remove(components);
+
+		return components;
 	}
 
 	/**
