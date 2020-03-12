@@ -3,6 +3,7 @@
  */
 
 import {IComponent} from "./Component";
+import {IEntityAdaptor} from "./EntityAdaptor";
 
 /**
  * 实体接口
@@ -12,6 +13,8 @@ export interface IEntity {
 	 * 激活状态
 	 */
 	readonly active: boolean;
+
+	entityAdaptor: IEntityAdaptor;
 
 	/**
 	 * 设置激活状态

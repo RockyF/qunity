@@ -4,6 +4,7 @@
 
 import {Application} from "./Application";
 
+//todo script,dynamic
 export enum Protocols {
 	RES = 'res://',
 	ENTITY = 'entity://',

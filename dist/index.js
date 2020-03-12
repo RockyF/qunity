@@ -6,6 +6,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
  * Created by rockyl on 2020-03-11.
  */
 var _a;
+//todo script,dynamic
 var Protocols;
 (function (Protocols) {
     Protocols["RES"] = "res://";
@@ -30,6 +31,7 @@ function entity(app, key, value, pid) {
 function transPrefabUUID(uuid, pid) {
     return pid ? pid + '_' + uuid : uuid;
 }
+//# sourceMappingURL=protocols.js.map
 
 /**
  * Created by rockyl on 2020-03-10.
@@ -47,8 +49,15 @@ function instantiate(app, docConfig) {
     }
     var rootEntity = setupEntityTree(app, docConfig, pid);
     setupComponent(app, docConfig, rootEntity, pid);
+    enableComponent(app, docConfig, rootEntity);
     return rootEntity;
 }
+/**
+ * 装配实体树
+ * @param app
+ * @param config
+ * @param pid
+ */
 function setupEntityTree(app, config, pid) {
     var entity = null;
     if (config) {
@@ -73,45 +82,114 @@ function setupEntityTree(app, config, pid) {
     }
     return entity;
 }
+/**
+ * 装配组件
+ * @param app
+ * @param config
+ * @param entity
+ * @param pid
+ */
 function setupComponent(app, config, entity, pid) {
     for (var i = 0, li = entity.children.length; i < li; i++) {
         var child = entity.children[i];
         var comps = config.children[i].comps;
         if (comps) {
+            var compManager = child.entityAdaptor.components;
             for (var _i = 0, comps_1 = comps; _i < comps_1.length; _i++) {
                 var comp = comps_1[_i];
-                var component = child.addComponent(comp.id);
+                var component = compManager.addComponent(comp.id, false);
+                component.enabled = comp.enabled;
                 injectProps(app, component, comp.props, pid);
+                compManager.$onAddComponent(component, true);
             }
         }
     }
 }
+/**
+ * 使能组件
+ * @param app
+ * @param config
+ * @param entity
+ * @param pid
+ */
+function enableComponent(app, config, entity, pid) {
+    for (var i = 0, li = entity.children.length; i < li; i++) {
+        var child = entity.children[i];
+        var comps = config.children[i].comps;
+        if (comps) {
+            var compManager = child.entityAdaptor.components;
+            compManager.setActive(true);
+        }
+    }
+}
+/**
+ * 注入属性
+ * @param app
+ * @param target
+ * @param props
+ * @param pid
+ */
 function injectProps(app, target, props, pid) {
     if (props) {
         for (var field in props) {
             var value = props[field];
-            var trulyValue = value;
-            if (typeof value === 'string') {
-                var hit = void 0;
-                var protocolGroups = [protocols, app.options.protocols];
-                for (var _i = 0, protocolGroups_1 = protocolGroups; _i < protocolGroups_1.length; _i++) {
-                    var protocols_1 = protocolGroups_1[_i];
-                    for (var protocol in protocols_1) {
-                        if (value.indexOf(protocol) === 0) {
-                            var protocolFunc = protocols_1[protocol];
-                            trulyValue = protocolFunc(app, field, value, pid);
-                            hit = true;
-                            break;
-                        }
-                    }
-                    if (hit) {
-                        break;
-                    }
-                }
+            if (typeof value === 'object') { //复杂数据
+                transComplexProps(app, target, field, value);
             }
-            target[field] = trulyValue;
+            else {
+                transBaseProps(app, target, field, value, pid);
+            }
         }
     }
+}
+function transComplexProps(app, target, field, value, pid) {
+    var trulyValue = value;
+    var override = false;
+    switch (value.type) {
+        case 'raw':
+            override = true;
+            trulyValue = value.data;
+            break;
+        default:
+            if (Array.isArray(value) && !target[field]) {
+                target[field] = [];
+            }
+            injectProps(app, target[field], value, pid);
+            break;
+    }
+    if (override) {
+        target[field] = trulyValue;
+    }
+}
+/**
+ * 转换基础类型的属性
+ * @param app
+ * @param target
+ * @param field
+ * @param value
+ * @param pid
+ */
+function transBaseProps(app, target, field, value, pid) {
+    var trulyValue = value;
+    if (typeof value === 'string') {
+        var hit = void 0;
+        var protocolGroups = [protocols, app.options.protocols];
+        for (var _i = 0, protocolGroups_1 = protocolGroups; _i < protocolGroups_1.length; _i++) {
+            var protocols_1 = protocolGroups_1[_i];
+            for (var protocol in protocols_1) {
+                if (value.indexOf(protocol) === 0) {
+                    var protocolFunc = protocols_1[protocol];
+                    trulyValue = protocolFunc(app, field, value, pid);
+                    hit = true;
+                    break;
+                }
+            }
+            if (hit) {
+                break;
+            }
+        }
+    }
+    target[field] = trulyValue;
 }
 //# sourceMappingURL=interpreter.js.map
 
@@ -415,7 +493,6 @@ var Component = /** @class */ (function (_super) {
      */
     Component.prototype.$awake = function (entityAdaptor) {
         this._entityAdaptor = entityAdaptor;
-        this.enabled = true;
         this.awake();
     };
     /**
@@ -492,16 +569,16 @@ var Component = /** @class */ (function (_super) {
  * 组件管理类
  */
 var ComponentManager = /** @class */ (function () {
-    function ComponentManager(IEntityAdaptor, app) {
+    function ComponentManager(entityAdaptor, app) {
         this._components = [];
         this._app = app;
-        this._entityAdaptor = IEntityAdaptor;
+        this._entityAdaptor = entityAdaptor;
         this.applyProxy();
     }
     ComponentManager.prototype.applyProxy = function () {
         var _this = this;
         var entity = this._entityAdaptor.entity;
-        entity.addComponent = function (componentId, props) {
+        entity.addComponent = function (componentId) {
             return _this.addComponent(componentId);
         };
         entity.removeComponent = function (componentId, index) {
@@ -567,13 +644,15 @@ var ComponentManager = /** @class */ (function () {
     /**
      * 添加组件
      * @param componentId
+     * @param awake
      */
-    ComponentManager.prototype.addComponent = function (componentId) {
+    ComponentManager.prototype.addComponent = function (componentId, awake) {
+        if (awake === void 0) { awake = true; }
         var component = this.$instantiateComponent(componentId);
         if (!component) {
             return;
         }
-        this._add(component);
+        this._add(component, undefined, awake);
         return component;
     };
     /**
@@ -628,11 +707,19 @@ var ComponentManager = /** @class */ (function () {
         }
     };
     /**
+     * 获取全部组件
+     */
+    ComponentManager.prototype.getAllComponents = function () {
+        return this.all;
+    };
+    /**
      * 添加组件
      * @param component
      * @param index
+     * @param awake
      */
-    ComponentManager.prototype._add = function (component, index) {
+    ComponentManager.prototype._add = function (component, index, awake) {
+        if (awake === void 0) { awake = true; }
         if (index == undefined || index < 0 || index >= this._components.length) {
             index = this._components.length;
         }
@@ -648,7 +735,7 @@ var ComponentManager = /** @class */ (function () {
         }
         this._components.splice(index, 0, component);
         if (currentIndex < 0) {
-            this.onAddComponent(component);
+            this.$onAddComponent(component, awake);
         }
     };
     /**
@@ -659,7 +746,7 @@ var ComponentManager = /** @class */ (function () {
         for (var _i = 0, components_1 = components; _i < components_1.length; _i++) {
             var component = components_1[_i];
             if (component) {
-                this.onRemoveComponent(component);
+                this.$onRemoveComponent(component);
                 var index = this._components.indexOf(component);
                 this._components.splice(index, 1);
             }
@@ -671,7 +758,7 @@ var ComponentManager = /** @class */ (function () {
     ComponentManager.prototype._removeAll = function () {
         while (this._components.length > 0) {
             var component = this._components.shift();
-            this.onRemoveComponent(component);
+            this.$onRemoveComponent(component);
         }
     };
     /**
@@ -727,17 +814,21 @@ var ComponentManager = /** @class */ (function () {
     /**
      * 当添加组件时
      * @param component
+     * @param awake
      */
-    ComponentManager.prototype.onAddComponent = function (component) {
+    ComponentManager.prototype.$onAddComponent = function (component, awake) {
+        if (awake === void 0) { awake = true; }
         this._componentsNameMapping = {};
         this._componentsDefMapping = {};
-        component.$awake(this._entityAdaptor);
+        if (awake) {
+            component.$awake(this._entityAdaptor);
+        }
     };
     /**
      * 当移除组件时
      * @param component
      */
-    ComponentManager.prototype.onRemoveComponent = function (component) {
+    ComponentManager.prototype.$onRemoveComponent = function (component) {
         this._componentsNameMapping = {};
         this._componentsDefMapping = {};
         component.enabled = false;
@@ -745,11 +836,10 @@ var ComponentManager = /** @class */ (function () {
     };
     ComponentManager.prototype.$instantiateComponent = function (componentId) {
         var def = this._app.$getComponentDef(componentId);
-        return new def;
+        return new def();
     };
     return ComponentManager;
 }());
-//# sourceMappingURL=ComponentManager.js.map
 
 /**
  * Created by rockyl on 2020-03-07.

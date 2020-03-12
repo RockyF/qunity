@@ -16,9 +16,9 @@ export class ComponentManager {
 	private _componentsNameMapping: any;
 	private _componentsDefMapping: any;
 
-	constructor(IEntityAdaptor: IEntityAdaptor, app: Application) {
+	constructor(entityAdaptor: IEntityAdaptor, app: Application) {
 		this._app = app;
-		this._entityAdaptor = IEntityAdaptor;
+		this._entityAdaptor = entityAdaptor;
 
 		this.applyProxy();
 	}
@@ -26,7 +26,7 @@ export class ComponentManager {
 	applyProxy() {
 		let entity = this._entityAdaptor.entity;
 
-		entity.addComponent = (componentId: string | Function, props: any) => {
+		entity.addComponent = (componentId: string | Function) => {
 			return this.addComponent(componentId);
 		};
 		entity.removeComponent = (componentId: string | Function, index?: number) => {
@@ -97,14 +97,15 @@ export class ComponentManager {
 	/**
 	 * 添加组件
 	 * @param componentId
+	 * @param awake
 	 */
-	addComponent(componentId: any) {
+	addComponent(componentId: any, awake = true) {
 		let component = this.$instantiateComponent(componentId);
 		if (!component) {
 			return;
 		}
 
-		this._add(component);
+		this._add(component, undefined, awake);
 
 		return component;
 	}
@@ -167,11 +168,19 @@ export class ComponentManager {
 	}
 
 	/**
+	 * 获取全部组件
+	 */
+	getAllComponents(){
+		return this.all;
+	}
+
+	/**
 	 * 添加组件
 	 * @param component
 	 * @param index
+	 * @param awake
 	 */
-	private _add(component: Component, index?: number) {
+	private _add(component: Component, index?: number, awake = true) {
 
 		if (index == undefined || index < 0 || index >= this._components.length) {
 			index = this._components.length;
@@ -192,7 +201,7 @@ export class ComponentManager {
 		this._components.splice(index, 0, component);
 
 		if (currentIndex < 0) {
-			this.onAddComponent(component);
+			this.$onAddComponent(component, awake);
 		}
 	}
 
@@ -203,7 +212,7 @@ export class ComponentManager {
 	private _remove(components) {
 		for (let component of components) {
 			if (component) {
-				this.onRemoveComponent(component);
+				this.$onRemoveComponent(component);
 				const index = this._components.indexOf(component);
 				this._components.splice(index, 1);
 			}
@@ -216,7 +225,7 @@ export class ComponentManager {
 	private _removeAll() {
 		while (this._components.length > 0) {
 			const component = this._components.shift();
-			this.onRemoveComponent(component);
+			this.$onRemoveComponent(component);
 		}
 	}
 
@@ -274,19 +283,22 @@ export class ComponentManager {
 	/**
 	 * 当添加组件时
 	 * @param component
+	 * @param awake
 	 */
-	private onAddComponent(component: Component) {
+	$onAddComponent(component: Component, awake = true) {
 		this._componentsNameMapping = {};
 		this._componentsDefMapping = {};
 
-		component.$awake(this._entityAdaptor);
+		if(awake){
+			component.$awake(this._entityAdaptor);
+		}
 	}
 
 	/**
 	 * 当移除组件时
 	 * @param component
 	 */
-	private onRemoveComponent(component: Component) {
+	$onRemoveComponent(component: Component) {
 		this._componentsNameMapping = {};
 		this._componentsDefMapping = {};
 
@@ -296,6 +308,6 @@ export class ComponentManager {
 
 	$instantiateComponent(componentId: any): Component {
 		let def = this._app.$getComponentDef(componentId);
-		return new def;
+		return new def();
 	}
 }

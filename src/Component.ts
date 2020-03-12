@@ -81,7 +81,6 @@ export class Component extends HashObject implements IComponent {
 	 */
 	$awake(entityAdaptor: IEntityAdaptor) {
 		this._entityAdaptor = entityAdaptor;
-		this.enabled = true;
 		this.awake();
 	}
 
