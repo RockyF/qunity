@@ -51,4 +51,16 @@ export interface IEntity {
 	 * @param componentId
 	 */
 	getComponents(componentId: string | Function): IComponent[];
+
+	/**
+	 * 获取全部组件
+	 */
+	getAllComponents(): IComponent[];
+
+	/**
+	 * 调用组件上的方法
+	 * @param methodName
+	 * @param args
+	 */
+	invokeOnComponents(methodName, ...args);
 }

@@ -3,6 +3,7 @@
  */
 import { ComponentManager } from "./ComponentManager";
 import { Application } from "./Application";
+import { IEntity } from "./IEntity";
 /**
  * 实体适配器接口
  */
@@ -10,11 +11,15 @@ export interface IEntityAdaptor {
     /**
      * 组件管理实例
      */
-    readonly entity: any;
+    readonly entity: IEntity;
     /**
      * 实体
      */
     readonly components: ComponentManager;
+    /**
+     * 获取应用
+     */
+    readonly app: Application;
     /**
      * 获取激活状态
      */
@@ -33,6 +38,7 @@ export interface IEntityAdaptor {
 export declare abstract class EntityAdaptorBase implements IEntityAdaptor {
     protected readonly _components: ComponentManager;
     protected readonly _entity: any;
+    private _app;
     /**
      * @inheritDoc
      */
@@ -41,6 +47,10 @@ export declare abstract class EntityAdaptorBase implements IEntityAdaptor {
      * @inheritDoc
      */
     get entity(): any;
+    /**
+     * @inheritDoc
+     */
+    get app(): Application;
     /**
      * @inheritDoc
      */

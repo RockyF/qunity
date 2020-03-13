@@ -11,6 +11,7 @@ export interface AdaptorOptions {
 	EntityAdaptor: any;
 	addDisplayFunc: (node: IEntity, parent: IEntity) => void;
 	traverseFunc: (node: IEntity, callback: (node) => boolean | void) => void;
+	bubblingFunc: (node: IEntity, callback: (node) => boolean | void) => void;
 	loadResourceFunc: (configs, onProgress?, onComplete?) => void;
 	getResFunc: (name) => any;
 	protocols?: {
@@ -140,6 +141,15 @@ export class Application {
 	 */
 	traverseDisplayNode(node: IEntity, callback: (node) => boolean | void) {
 		this._options.traverseFunc(node, callback);
+	}
+
+	/**
+	 * 冒泡显示节点
+	 * @param node
+	 * @param callback
+	 */
+	bubblingDisplayNode(node: IEntity, callback: (node) => boolean | void) {
+		this._options.bubblingFunc(node, callback);
 	}
 
 	/**

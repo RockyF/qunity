@@ -4,11 +4,16 @@
 
 import {HashObject} from "./HashObject";
 import {IEntityAdaptor} from "./EntityAdaptor";
+import {IEntity} from "./IEntity";
 
 export interface IComponent {
 	readonly entityAdaptor: IEntityAdaptor;
 	readonly entity: any;
 	enabled: boolean;
+
+	broadcast(methodName: string, ...args);
+
+	bubbling(methodName: string, ...args);
 
 	awake();
 
@@ -18,7 +23,7 @@ export interface IComponent {
 
 	onDisable();
 
-	update(t: number);
+	update(delta: number);
 
 	onDestroy();
 
@@ -45,7 +50,7 @@ export class Component extends HashObject implements IComponent {
 		return this._entityAdaptor;
 	}
 
-	get entity(): any {
+	get entity(): IEntity {
 		return this._entityAdaptor.entity;
 	}
 
@@ -139,30 +144,72 @@ export class Component extends HashObject implements IComponent {
 
 	/**
 	 * @private
-	 * @param t
+	 * @param delta
 	 */
-	$onUpdate(t: number) {
+	$onUpdate(delta: number) {
 		if (this._enabled) {
 			if (!this._started) {
 				this._started = true;
 				this.start();
 			}
-			this.update(t);
+			this.update(delta);
 		}
 	}
 
+	/**
+	 * 当点击时
+	 * @param e
+	 */
 	onClick(e) {
 	}
 
+	/**
+	 * 当鼠标按下
+	 * @param e
+	 */
 	onMouseDown(e) {
 	}
 
+	/**
+	 * 当鼠标移动
+	 * @param e
+	 */
 	onMouseMove(e) {
 	}
 
+	/**
+	 * 当鼠标松开
+	 * @param e
+	 */
 	onMouseUp(e) {
 	}
 
+	/**
+	 * 当鼠标在实体外侧松开
+	 * @param e
+	 */
 	onMouseUpOutside(e) {
+	}
+
+	/**
+	 * 向下广播执行
+	 * @param methodName
+	 * @param args
+	 */
+	broadcast(methodName: string, ...args) {
+		this._entityAdaptor.app.traverseDisplayNode(this.entity, (node: IEntity) => {
+			node.invokeOnComponents && node.invokeOnComponents(methodName, args);
+		})
+	}
+
+	/**
+	 * 向上冒泡执行
+	 * @param methodName
+	 * @param args
+	 */
+	bubbling(methodName: string, ...args) {
+		this._entityAdaptor.app.bubblingDisplayNode(this.entity, (node: IEntity) => {
+			node.invokeOnComponents && node.invokeOnComponents(methodName, args);
+		})
 	}
 }

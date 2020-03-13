@@ -4,6 +4,7 @@
 
 import {ComponentManager} from "./ComponentManager";
 import {Application} from "./Application";
+import {IEntity} from "./IEntity";
 
 /**
  * 实体适配器接口
@@ -12,11 +13,16 @@ export interface IEntityAdaptor {
 	/**
 	 * 组件管理实例
 	 */
-	readonly entity: any;
+	readonly entity: IEntity;
 	/**
 	 * 实体
 	 */
 	readonly components: ComponentManager;
+
+	/**
+	 * 获取应用
+	 */
+	readonly app: Application;
 
 	/**
 	 * 获取激活状态
@@ -40,6 +46,7 @@ export interface IEntityAdaptor {
 export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	protected readonly _components: ComponentManager;
 	protected readonly _entity: any;
+	private _app: Application;
 
 	/**
 	 * @inheritDoc
@@ -53,6 +60,13 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	 */
 	get entity() {
 		return this._entity;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	get app(){
+		return this._app;
 	}
 
 	/**
@@ -74,6 +88,7 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 
 	constructor(entity: any, app: Application) {
 		this._entity = entity;
+		this._app = app;
 		this._components = new ComponentManager(this, app);
 
 		entity.entityAdaptor = this;
@@ -102,7 +117,7 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	 * @param args
 	 */
 	invokeLifecycle(type: string, ...args) {
-		if(!this.getActive()){
+		if (!this.getActive()) {
 			return;
 		}
 
@@ -120,7 +135,7 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	 * @param e
 	 */
 	invokeInteractionEvent(type: string, e) {
-		if(!this.getActive()){
+		if (!this.getActive()) {
 			return;
 		}
 

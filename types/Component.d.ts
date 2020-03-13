@@ -3,15 +3,18 @@
  */
 import { HashObject } from "./HashObject";
 import { IEntityAdaptor } from "./EntityAdaptor";
+import { IEntity } from "./IEntity";
 export interface IComponent {
     readonly entityAdaptor: IEntityAdaptor;
     readonly entity: any;
     enabled: boolean;
+    broadcast(methodName: string, ...args: any[]): any;
+    bubbling(methodName: string, ...args: any[]): any;
     awake(): any;
     start(): any;
     onEnable(): any;
     onDisable(): any;
-    update(t: number): any;
+    update(delta: number): any;
     onDestroy(): any;
     onClick(e: any): any;
     onMouseDown(e: any): any;
@@ -27,7 +30,7 @@ export declare class Component extends HashObject implements IComponent {
     private _enabled;
     private _started;
     get entityAdaptor(): IEntityAdaptor;
-    get entity(): any;
+    get entity(): IEntity;
     constructor();
     /**
      * 是否有效
@@ -71,12 +74,44 @@ export declare class Component extends HashObject implements IComponent {
     onDestroy(): void;
     /**
      * @private
-     * @param t
+     * @param delta
      */
-    $onUpdate(t: number): void;
+    $onUpdate(delta: number): void;
+    /**
+     * 当点击时
+     * @param e
+     */
     onClick(e: any): void;
+    /**
+     * 当鼠标按下
+     * @param e
+     */
     onMouseDown(e: any): void;
+    /**
+     * 当鼠标移动
+     * @param e
+     */
     onMouseMove(e: any): void;
+    /**
+     * 当鼠标松开
+     * @param e
+     */
     onMouseUp(e: any): void;
+    /**
+     * 当鼠标在实体外侧松开
+     * @param e
+     */
     onMouseUpOutside(e: any): void;
+    /**
+     * 向下广播执行
+     * @param methodName
+     * @param args
+     */
+    broadcast(methodName: string, ...args: any[]): void;
+    /**
+     * 向上冒泡执行
+     * @param methodName
+     * @param args
+     */
+    bubbling(methodName: string, ...args: any[]): void;
 }

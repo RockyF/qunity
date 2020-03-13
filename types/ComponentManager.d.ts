@@ -13,7 +13,7 @@ export declare class ComponentManager {
     private _components;
     private _componentsNameMapping;
     private _componentsDefMapping;
-    constructor(IEntityAdaptor: IEntityAdaptor, app: Application);
+    constructor(entityAdaptor: IEntityAdaptor, app: Application);
     applyProxy(): void;
     /**
      * 遍历组件
@@ -61,6 +61,10 @@ export declare class ComponentManager {
      */
     getComponents(componentId: any): Component[];
     /**
+     * 获取全部组件
+     */
+    getAllComponents(): Component[];
+    /**
      * 添加组件
      * @param component
      * @param index
@@ -100,6 +104,12 @@ export declare class ComponentManager {
      * 获取所有组件
      */
     private get all();
+    /**
+     * 调用组件上的方法
+     * @param methodName
+     * @param args
+     */
+    invokeOnComponents(methodName: any, args: any): void;
     /**
      * 当添加组件时
      * @param component

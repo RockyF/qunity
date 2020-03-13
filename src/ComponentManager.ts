@@ -41,6 +41,9 @@ export class ComponentManager {
 		entity.getComponents = (componentId: string | Function) => {
 			return this.getComponents(componentId);
 		};
+		entity.invokeOnComponents = (methodName: string, args) => {
+			return this.invokeOnComponents(methodName, args);
+		};
 	}
 
 	/**
@@ -170,7 +173,7 @@ export class ComponentManager {
 	/**
 	 * 获取全部组件
 	 */
-	getAllComponents(){
+	getAllComponents() {
 		return this.all;
 	}
 
@@ -281,6 +284,21 @@ export class ComponentManager {
 	}
 
 	/**
+	 * 调用组件上的方法
+	 * @param methodName
+	 * @param args
+	 */
+	invokeOnComponents(methodName, args) {
+		this.eachComponent(component => {
+			//if (component.enabled) {
+				if (component[methodName]) {
+					component[methodName].apply(component, args);
+				}
+			//}
+		})
+	}
+
+	/**
 	 * 当添加组件时
 	 * @param component
 	 * @param awake
@@ -289,7 +307,7 @@ export class ComponentManager {
 		this._componentsNameMapping = {};
 		this._componentsDefMapping = {};
 
-		if(awake){
+		if (awake) {
 			component.$awake(this._entityAdaptor);
 		}
 	}

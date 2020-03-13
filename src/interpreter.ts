@@ -69,7 +69,8 @@ function setupEntityTree(app: Application, config, pid?: number) {
 function setupComponent(app: Application, config, entity, pid?: number) {
 	for (let i = 0, li = entity.children.length; i < li; i++) {
 		const child: IEntity = entity.children[i];
-		let comps = config.children[i].comps;
+		const childConfig = config.children[i];
+		let comps = childConfig.comps;
 		if (comps) {
 			let compManager = child.entityAdaptor.components;
 			for (let comp of comps) {
@@ -79,6 +80,7 @@ function setupComponent(app: Application, config, entity, pid?: number) {
 				compManager.$onAddComponent(component, true);
 			}
 		}
+		setupComponent(app, childConfig, child, pid);
 	}
 }
 

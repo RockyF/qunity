@@ -88,7 +88,8 @@ function setupEntityTree(app, config, pid) {
 function setupComponent(app, config, entity, pid) {
     for (var i = 0, li = entity.children.length; i < li; i++) {
         var child = entity.children[i];
-        var comps = config.children[i].comps;
+        var childConfig = config.children[i];
+        var comps = childConfig.comps;
         if (comps) {
             var compManager = child.entityAdaptor.components;
             for (var _i = 0, comps_1 = comps; _i < comps_1.length; _i++) {
@@ -99,6 +100,7 @@ function setupComponent(app, config, entity, pid) {
                 compManager.$onAddComponent(component, true);
             }
         }
+        setupComponent(app, childConfig, child, pid);
     }
 }
 /**
@@ -321,6 +323,14 @@ var Application = /** @class */ (function () {
         this._options.traverseFunc(node, callback);
     };
     /**
+     * 冒泡显示节点
+     * @param node
+     * @param callback
+     */
+    Application.prototype.bubblingDisplayNode = function (node, callback) {
+        this._options.bubblingFunc(node, callback);
+    };
+    /**
      * 加载资源
      * @param configs
      * @param onProgress
@@ -533,30 +543,77 @@ var Component = /** @class */ (function (_super) {
     };
     /**
      * @private
-     * @param t
+     * @param delta
      */
-    Component.prototype.$onUpdate = function (t) {
+    Component.prototype.$onUpdate = function (delta) {
         if (this._enabled) {
             if (!this._started) {
                 this._started = true;
                 this.start();
             }
-            this.update(t);
+            this.update(delta);
         }
     };
+    /**
+     * 当点击时
+     * @param e
+     */
     Component.prototype.onClick = function (e) {
     };
+    /**
+     * 当鼠标按下
+     * @param e
+     */
     Component.prototype.onMouseDown = function (e) {
     };
+    /**
+     * 当鼠标移动
+     * @param e
+     */
     Component.prototype.onMouseMove = function (e) {
     };
+    /**
+     * 当鼠标松开
+     * @param e
+     */
     Component.prototype.onMouseUp = function (e) {
     };
+    /**
+     * 当鼠标在实体外侧松开
+     * @param e
+     */
     Component.prototype.onMouseUpOutside = function (e) {
+    };
+    /**
+     * 向下广播执行
+     * @param methodName
+     * @param args
+     */
+    Component.prototype.broadcast = function (methodName) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        this._entityAdaptor.app.traverseDisplayNode(this.entity, function (node) {
+            node.invokeOnComponents && node.invokeOnComponents(methodName, args);
+        });
+    };
+    /**
+     * 向上冒泡执行
+     * @param methodName
+     * @param args
+     */
+    Component.prototype.bubbling = function (methodName) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        this._entityAdaptor.app.bubblingDisplayNode(this.entity, function (node) {
+            node.invokeOnComponents && node.invokeOnComponents(methodName, args);
+        });
     };
     return Component;
 }(HashObject));
-//# sourceMappingURL=Component.js.map
 
 /**
  * Created by rockyl on 2019-07-29.
@@ -588,6 +645,9 @@ var ComponentManager = /** @class */ (function () {
         };
         entity.getComponents = function (componentId) {
             return _this.getComponents(componentId);
+        };
+        entity.invokeOnComponents = function (methodName, args) {
+            return _this.invokeOnComponents(methodName, args);
         };
     };
     /**
@@ -808,6 +868,20 @@ var ComponentManager = /** @class */ (function () {
         configurable: true
     });
     /**
+     * 调用组件上的方法
+     * @param methodName
+     * @param args
+     */
+    ComponentManager.prototype.invokeOnComponents = function (methodName, args) {
+        this.eachComponent(function (component) {
+            //if (component.enabled) {
+            if (component[methodName]) {
+                component[methodName].apply(component, args);
+            }
+            //}
+        });
+    };
+    /**
      * 当添加组件时
      * @param component
      * @param awake
@@ -836,6 +910,7 @@ var ComponentManager = /** @class */ (function () {
     };
     return ComponentManager;
 }());
+//# sourceMappingURL=ComponentManager.js.map
 
 /**
  * Created by rockyl on 2020-03-07.
@@ -846,6 +921,7 @@ var ComponentManager = /** @class */ (function () {
 var EntityAdaptorBase = /** @class */ (function () {
     function EntityAdaptorBase(entity, app) {
         this._entity = entity;
+        this._app = app;
         this._components = new ComponentManager(this, app);
         entity.entityAdaptor = this;
         this.applyProxy();
@@ -866,6 +942,16 @@ var EntityAdaptorBase = /** @class */ (function () {
          */
         get: function () {
             return this._entity;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(EntityAdaptorBase.prototype, "app", {
+        /**
+         * @inheritDoc
+         */
+        get: function () {
+            return this._app;
         },
         enumerable: true,
         configurable: true
