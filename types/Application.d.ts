@@ -21,6 +21,8 @@ export declare class Application {
     private _options;
     private _componentDefs;
     private _entityDefs;
+    private _manifest;
+    private _sceneConfigCache;
     entityMap: {};
     /**
      * 配置
@@ -30,6 +32,35 @@ export declare class Application {
      * 舞台实例
      */
     get stage(): any;
+    /**
+     * 启动
+     * @param options
+     * @param onProgress
+     * @param onComplete
+     */
+    launch(options?: any, onProgress?: any, onComplete?: any): void;
+    /**
+     * 预加载场景
+     * @param name
+     * @param onProgress
+     * @param onComplete
+     */
+    preloadScene(name: string, onProgress?: any, onComplete?: any): void;
+    /**
+     * 加载场景
+     * @param name
+     * @param onProgress
+     * @param onComplete
+     */
+    private loadScene;
+    /**
+     * 启动场景
+     * @param name
+     * @param options
+     * @param onProgress
+     * @param onComplete
+     */
+    launchScene(name: string, options?: any, onProgress?: any, onComplete?: any): void;
     /**
      * 装配适配器
      * @param options

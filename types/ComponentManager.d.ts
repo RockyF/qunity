@@ -38,8 +38,9 @@ export declare class ComponentManager {
      * 添加组件
      * @param componentId
      * @param awake
+     * @param enabled
      */
-    addComponent(componentId: any, awake?: boolean): Component;
+    addComponent(componentId: any, awake?: boolean, enabled?: boolean): Component;
     /**
      * 移除组件
      * @param componentId

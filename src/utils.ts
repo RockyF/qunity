@@ -52,3 +52,16 @@ export function lerpVector3(begin: {x: number, y: number, z: number}, end: {x: n
 		z: lerp(begin.z, end.z, t, allowOutOfBounds),
 	};
 }
+
+/**
+ * json5字符串转对象
+ * @param str
+ */
+export function decodeJson5(str){
+	let func = new Function('return ' + str);
+	try {
+		return func();
+	}catch (e) {
+		console.warn(e);
+	}
+}

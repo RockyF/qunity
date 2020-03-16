@@ -7,10 +7,12 @@ const {uglify} = require('rollup-plugin-uglify');
 
 const name = 'qunity';
 
-export default {
+const prod = process.env.BUILD === 'production';
+
+const options = {
 	input: 'src/index.ts',
 	output: [
-		{
+		/*{
 			file: `dist/index.js`,
 			sourcemap: true,
 			format: 'cjs',
@@ -19,10 +21,10 @@ export default {
 			file: `dist/index.es.js`,
 			sourcemap: true,
 			format: 'es',
-		},
+		},*/
 		{
-			file: `dist/index.umd.js`,
-			sourcemap: true,
+			file: prod ? 'dist/index.min.js' : 'dist/index.js',
+			sourcemap: !prod,
 			format: 'umd',
 			name,
 		}
@@ -31,6 +33,11 @@ export default {
 		typescript({
 			typescript: require('typescript'),
 		}),
-		//uglify({}),
 	]
 };
+
+if (prod) {
+	options.plugins.push(uglify({}));
+}
+
+export default options;

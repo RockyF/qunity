@@ -5,6 +5,7 @@
 import {IEntityAdaptor} from "./EntityAdaptor";
 import {IEntity} from "./IEntity";
 import {instantiate} from "./interpreter";
+import {decodeJson5} from "./utils";
 
 export interface AdaptorOptions {
 	stage: any;
@@ -15,7 +16,7 @@ export interface AdaptorOptions {
 	loadResourceFunc: (configs, onProgress?, onComplete?) => void;
 	getResFunc: (name) => any;
 	protocols?: {
-		[key: string]: (app: Application, key: string, value: any, pid?:number) => any,
+		[key: string]: (app: Application, key: string, value: any, pid?: number) => any,
 	};
 }
 
@@ -26,13 +27,15 @@ export class Application {
 	private _options: AdaptorOptions;
 	private _componentDefs: any = {};
 	private _entityDefs: any = {};
+	private _manifest: any;
+	private _sceneConfigCache: any = {};
 
 	entityMap = {};
 
 	/**
 	 * 配置
 	 */
-	get options(): AdaptorOptions{
+	get options(): AdaptorOptions {
 		return this._options;
 	}
 
@@ -41,6 +44,79 @@ export class Application {
 	 */
 	get stage() {
 		return this._options.stage;
+	}
+
+	/**
+	 * 启动
+	 * @param options
+	 * @param onProgress
+	 * @param onComplete
+	 */
+	launch(options?: any, onProgress?, onComplete?) {
+		this.loadResource([
+			{name: 'manifest.json', url: 'manifest.json'}
+		], null, () => {
+			let manifest = this._manifest = this.getRes('manifest.json').data;
+			let entryScene = manifest.scene.entryScene;
+			this.launchScene(entryScene, options, onProgress, onComplete)
+		})
+	}
+
+	/**
+	 * 预加载场景
+	 * @param name
+	 * @param onProgress
+	 * @param onComplete
+	 */
+	preloadScene(name: string, onProgress?, onComplete?) {
+		this.loadScene(name, onProgress, onComplete);
+	}
+
+	/**
+	 * 加载场景
+	 * @param name
+	 * @param onProgress
+	 * @param onComplete
+	 */
+	private loadScene(name: string, onProgress?, onComplete?) {
+		let scenes = this._manifest.scene.scenes;
+		let sceneUrl = scenes[name];
+
+		if (this._sceneConfigCache[name]) {
+			onComplete(this._sceneConfigCache[name]);
+			return;
+		}
+
+		this.loadResource([
+			{name: name + '.scene', url: sceneUrl, options: {xhrType: 'text'}},
+		], null, () => {
+			let res = this.getRes('main.scene');
+			let sceneConfig: any = decodeJson5(res.data);
+
+			this._sceneConfigCache[name] = sceneConfig;
+
+			setTimeout(() => {
+				this.loadResource(sceneConfig.assets, onProgress, () => {
+					onComplete(sceneConfig);
+				});
+			})
+		});
+	}
+
+	/**
+	 * 启动场景
+	 * @param name
+	 * @param options
+	 * @param onProgress
+	 * @param onComplete
+	 */
+	launchScene(name: string, options?: any, onProgress?, onComplete?) {
+		this.loadScene(name, onProgress, (sceneConfig) => {
+			let scene = this.instantiate(sceneConfig);
+			this.addDisplayNode(scene, this.stage);
+
+			onComplete && onComplete();
+		});
 	}
 
 	/**

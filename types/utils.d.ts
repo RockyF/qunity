@@ -49,3 +49,8 @@ export declare function lerpVector3(begin: {
     y: number;
     z: number;
 };
+/**
+ * json5字符串转对象
+ * @param str
+ */
+export declare function decodeJson5(str: any): any;

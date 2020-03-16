@@ -74,7 +74,7 @@ function setupComponent(app: Application, config, entity, pid?: number) {
 		if (comps) {
 			let compManager = child.entityAdaptor.components;
 			for (let comp of comps) {
-				let component = compManager.addComponent(comp.id, false);
+				let component = compManager.addComponent(comp.script, false);
 				component.enabled = comp.enabled;
 				injectProps(app, component, comp.props, pid);
 				compManager.$onAddComponent(component, true);

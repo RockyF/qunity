@@ -26,8 +26,8 @@ export class ComponentManager {
 	applyProxy() {
 		let entity = this._entityAdaptor.entity;
 
-		entity.addComponent = (componentId: string | Function) => {
-			return this.addComponent(componentId);
+		entity.addComponent = (componentId: string | Function, enabled: boolean = true) => {
+			return this.addComponent(componentId, true, enabled);
 		};
 		entity.removeComponent = (componentId: string | Function, index?: number) => {
 			return this.removeComponent(componentId, index);
@@ -101,13 +101,17 @@ export class ComponentManager {
 	 * 添加组件
 	 * @param componentId
 	 * @param awake
+	 * @param enabled
 	 */
-	addComponent(componentId: any, awake = true) {
+	addComponent(componentId: any, awake = true, enabled: boolean = false) {
 		let component = this.$instantiateComponent(componentId);
 		if (!component) {
 			return;
 		}
 
+		if(enabled){
+			component.enabled = true;
+		}
 		this._add(component, undefined, awake);
 
 		return component;

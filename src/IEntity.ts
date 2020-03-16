@@ -25,8 +25,9 @@ export interface IEntity {
 	/**
 	 * 添加组件
 	 * @param componentId
+	 * @param enabled
 	 */
-	addComponent(componentId: string | Function): IComponent;
+	addComponent(componentId: string | Function, enabled?: boolean): IComponent;
 
 	/**
 	 * 移除组件
