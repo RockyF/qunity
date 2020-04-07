@@ -36,6 +36,42 @@ export interface IComponent {
 	onMouseUp(e);
 
 	onMouseUpOutside(e);
+
+	/**
+	 * 添加组件
+	 * @param componentId
+	 * @param enabled
+	 */
+	addComponent(componentId: string | Function, enabled?: boolean): IComponent;
+
+	/**
+	 * 移除组件
+	 * @param componentId
+	 * @param index
+	 */
+	removeComponent(componentId: string | Function, index?: number): IComponent[];
+
+	/**
+	 * 移除所有组件
+	 */
+	removeAllComponents();
+
+	/**
+	 * 获取组件
+	 * @param componentId
+	 */
+	getComponent(componentId: string | Function): IComponent;
+
+	/**
+	 * 获取组件组
+	 * @param componentId
+	 */
+	getComponents(componentId: string | Function): IComponent[];
+
+	/**
+	 * 获取全部组件
+	 */
+	getAllComponents(): IComponent[];
 }
 
 /**
@@ -129,9 +165,9 @@ export class Component extends HashObject implements IComponent {
 
 	/**
 	 * 时钟更新
-	 * @param t
+	 * @param delta
 	 */
-	update(t: number) {
+	update(delta: number) {
 
 	}
 
@@ -211,5 +247,29 @@ export class Component extends HashObject implements IComponent {
 		this._entityAdaptor.app.bubblingDisplayNode(this.entity, (node: IEntity) => {
 			node.invokeOnComponents && node.invokeOnComponents(methodName, args);
 		})
+	}
+
+	addComponent(componentId: string | Function, enabled?: boolean): IComponent {
+		return this.entity.addComponent(componentId, enabled);
+	}
+
+	getAllComponents(): IComponent[] {
+		return this.entity.getAllComponents();
+	}
+
+	getComponent(componentId: string | Function): IComponent {
+		return this.entity.getComponent(componentId);
+	}
+
+	getComponents(componentId: string | Function): IComponent[] {
+		return this.entity.getComponents(componentId);
+	}
+
+	removeAllComponents() {
+		return this.entity.removeAllComponents();
+	}
+
+	removeComponent(componentId: string | Function, index?: number): IComponent[] {
+		return this.entity.removeComponent(componentId, index);
 	}
 }

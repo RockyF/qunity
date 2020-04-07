@@ -11,23 +11,28 @@
 	//todo script,dynamic
 	var Protocols;
 	(function (Protocols) {
-	    Protocols["RES"] = "res://";
+	    Protocols["ASSET"] = "asset://";
 	    Protocols["ENTITY"] = "entity://";
 	})(Protocols || (Protocols = {}));
 	var protocols = (_a = {},
-	    _a[Protocols.RES] = res,
+	    _a[Protocols.ASSET] = asset,
 	    _a[Protocols.ENTITY] = entity,
 	    _a);
-	function res(app, key, value) {
+	function asset(app, key, value) {
 	    var trulyValue;
-	    var uuid = value.replace(Protocols.RES, '');
-	    trulyValue = app.getRes(uuid);
+	    var uuid = value.replace(Protocols.ASSET, '');
+	    trulyValue = app.getAsset(uuid);
 	    return trulyValue;
 	}
 	function entity(app, key, value, pid) {
 	    var trulyValue;
-	    var uuid = transPrefabUUID(value.replace(Protocols.ENTITY, ''), pid);
-	    trulyValue = app.entityMap[uuid];
+	    if (value) {
+	        var uuid = transPrefabUUID(value.replace(Protocols.ENTITY, ''), pid);
+	        trulyValue = app.entityMap[uuid];
+	    }
+	    else {
+	        trulyValue = null;
+	    }
 	    return trulyValue;
 	}
 	function transPrefabUUID(uuid, pid) {
@@ -35,95 +40,301 @@
 	}
 	//# sourceMappingURL=protocols.js.map
 
+	/*! *****************************************************************************
+	Copyright (c) Microsoft Corporation. All rights reserved.
+	Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+	this file except in compliance with the License. You may obtain a copy of the
+	License at http://www.apache.org/licenses/LICENSE-2.0
+
+	THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+	WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+	MERCHANTABLITY OR NON-INFRINGEMENT.
+
+	See the Apache Version 2.0 License for specific language governing permissions
+	and limitations under the License.
+	***************************************************************************** */
+	/* global Reflect, Promise */
+
+	var extendStatics = function(d, b) {
+	    extendStatics = Object.setPrototypeOf ||
+	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+	    return extendStatics(d, b);
+	};
+
+	function __extends(d, b) {
+	    extendStatics(d, b);
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	}
+
+	function __decorate(decorators, target, key, desc) {
+	    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+	    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+	    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+	    return c > 3 && r && Object.defineProperty(target, key, r), r;
+	}
+
+	/**
+	 * Created by rockyl on 2018/11/5.
+	 */
+	var HASH_CODE_INK = 0;
+	function getHashCode() {
+	    return ++HASH_CODE_INK;
+	}
+	/**
+	 * 哈希对象
+	 */
+	var HashObject = /** @class */ (function () {
+	    function HashObject() {
+	        this._hashCode = getHashCode();
+	    }
+	    Object.defineProperty(HashObject.prototype, "hashCode", {
+	        get: function () {
+	            return this._hashCode;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    return HashObject;
+	}());
+	//# sourceMappingURL=HashObject.js.map
+
+	/**
+	 * Created by rockyl on 2020-04-07.
+	 */
+	/**
+	 * 单一事件类
+	 * 一对多形式的订阅分发机制
+	 */
+	var QunityEvent = /** @class */ (function (_super) {
+	    __extends(QunityEvent, _super);
+	    function QunityEvent() {
+	        var _this = _super.call(this) || this;
+	        _this._subscribers = [];
+	        return _this;
+	    }
+	    QunityEvent.prototype.findListener = function (callback) {
+	        var _subscribers = this._subscribers;
+	        var result;
+	        for (var i = 0, li = _subscribers.length; i < li; i++) {
+	            var subscriber = _subscribers[i];
+	            if (subscriber.callback == callback) {
+	                result = {
+	                    subscriber: subscriber,
+	                    index: i,
+	                };
+	                break;
+	            }
+	        }
+	        return result;
+	    };
+	    /**
+	     * 添加侦听
+	     * @param callback
+	     * @param thisObj
+	     * @param priority
+	     * @param params
+	     */
+	    QunityEvent.prototype.addListener = function (callback, thisObj, priority) {
+	        if (priority === void 0) { priority = 0; }
+	        var params = [];
+	        for (var _i = 3; _i < arguments.length; _i++) {
+	            params[_i - 3] = arguments[_i];
+	        }
+	        if (!callback) {
+	            return;
+	        }
+	        var _subscribers = this._subscribers;
+	        var listener = this.findListener(callback);
+	        if (!listener) {
+	            _subscribers.push({
+	                callback: callback,
+	                thisObj: thisObj,
+	                priority: priority,
+	                params: params,
+	            });
+	        }
+	    };
+	    /**
+	     * 添加侦听配置
+	     * @param config
+	     */
+	    QunityEvent.prototype.addListenerConfig = function (config) {
+	        var entity = config.entity, componentIndex = config.component, methodName = config.method;
+	        if (entity && componentIndex >= 0 && methodName) {
+	            this._subscribers.push(config);
+	        }
+	    };
+	    /**
+	     * 添加单次侦听
+	     * @param callback
+	     * @param thisObj
+	     * @param priority
+	     * @param params
+	     */
+	    QunityEvent.prototype.once = function (callback, thisObj, priority) {
+	        if (priority === void 0) { priority = 0; }
+	        var params = [];
+	        for (var _i = 3; _i < arguments.length; _i++) {
+	            params[_i - 3] = arguments[_i];
+	        }
+	        if (!callback) {
+	            return;
+	        }
+	        var _subscribers = this._subscribers;
+	        var listener = this.findListener(callback);
+	        if (!listener) {
+	            _subscribers.push({
+	                callback: callback,
+	                thisObj: thisObj,
+	                priority: priority,
+	                params: params,
+	                once: true,
+	            });
+	        }
+	    };
+	    /**
+	     * 移除侦听
+	     * @param callback
+	     */
+	    QunityEvent.prototype.removeListener = function (callback) {
+	        if (!callback) {
+	            return;
+	        }
+	        var _subscribers = this._subscribers;
+	        if (typeof callback === 'object') {
+	            _subscribers.splice(_subscribers.indexOf(callback), 1);
+	        }
+	        else {
+	            var listener = this.findListener(callback);
+	            if (listener) {
+	                _subscribers.splice(listener.index, 1);
+	            }
+	        }
+	    };
+	    /**
+	     * 是否已经侦听
+	     * @param callback
+	     */
+	    QunityEvent.prototype.hasListener = function (callback) {
+	        return !!this.findListener(callback);
+	    };
+	    /**
+	     * 调用派发
+	     * @param paramsNew
+	     */
+	    QunityEvent.prototype.invoke = function () {
+	        var paramsNew = [];
+	        for (var _i = 0; _i < arguments.length; _i++) {
+	            paramsNew[_i] = arguments[_i];
+	        }
+	        var _subscribers = this._subscribers;
+	        //按优先级降序
+	        _subscribers.sort(function (a, b) {
+	            return a.priority - b.priority;
+	        });
+	        for (var _a = 0, _subscribers_1 = _subscribers; _a < _subscribers_1.length; _a++) {
+	            var subscriber = _subscribers_1[_a];
+	            if (subscriber) {
+	                var callback = void 0, thisObj = void 0;
+	                var params = subscriber.params, once = subscriber.once;
+	                var allParams = params.concat(paramsNew);
+	                if (subscriber.entity) {
+	                    var entity = subscriber.entity, componentIndex = subscriber.component, methodName = subscriber.method;
+	                    var component = entity.getAllComponents()[componentIndex];
+	                    if (component) {
+	                        callback = component[methodName];
+	                    }
+	                    thisObj = entity;
+	                }
+	                else {
+	                    callback = subscriber.callback;
+	                    thisObj = subscriber.thisObj;
+	                }
+	                if (callback) {
+	                    try {
+	                        callback.apply(thisObj, allParams);
+	                    }
+	                    catch (e) {
+	                        //console.log(e);
+	                    }
+	                    if (once) {
+	                        if (subscriber.entity) {
+	                            this.removeListener(subscriber);
+	                        }
+	                        else {
+	                            this.removeListener(callback);
+	                        }
+	                    }
+	                }
+	            }
+	        }
+	    };
+	    return QunityEvent;
+	}(HashObject));
+
 	/**
 	 * Created by rockyl on 2020-03-10.
 	 */
 	var prefabID = 0;
+	var specialProps = ['enabled', 'active', 'script',];
 	/**
 	 * 实例化节点树
 	 * @param app
-	 * @param docConfig
+	 * @param docSource
 	 */
-	function instantiate(app, docConfig) {
-	    var pid;
-	    if (docConfig.docType === 'prefab') {
-	        pid = ++prefabID;
+	function instantiate(app, docSource) {
+	    if (docSource) {
+	        var doc = parseViewDoc(app, docSource);
+	        var pid = void 0;
+	        if (doc.type === 'prefab') {
+	            pid = ++prefabID;
+	        }
+	        setupComponent(app, doc.root, pid);
+	        enableComponent(app, doc.root);
+	        return doc.root;
 	    }
-	    var rootEntity = setupEntityTree(app, docConfig, pid);
-	    setupComponent(app, docConfig, rootEntity, pid);
-	    enableComponent(app, docConfig, rootEntity);
-	    return rootEntity;
-	}
-	/**
-	 * 装配实体树
-	 * @param app
-	 * @param config
-	 * @param pid
-	 */
-	function setupEntityTree(app, config, pid) {
-	    var entity = null;
-	    if (config) {
-	        var type = config.type, name = config.name, uuid = config.uuid, children = config.children;
-	        if (pid !== undefined && uuid !== undefined) {
-	            uuid = pid + '_' + uuid;
-	        }
-	        entity = app.createEntity(type);
-	        if (name) {
-	            entity['name'] = name;
-	        }
-	        entity['uuid'] = uuid;
-	        injectProps(app, entity, config.props);
-	        app.entityMap[uuid] = entity;
-	        if (children) {
-	            for (var _i = 0, children_1 = children; _i < children_1.length; _i++) {
-	                var child = children_1[_i];
-	                var childEntity = setupEntityTree(app, child, pid);
-	                app.addDisplayNode(childEntity, entity);
-	            }
-	        }
-	    }
-	    return entity;
 	}
 	/**
 	 * 装配组件
 	 * @param app
-	 * @param config
 	 * @param entity
 	 * @param pid
 	 */
-	function setupComponent(app, config, entity, pid) {
+	function setupComponent(app, entity, pid) {
+	    if (!entity.children) {
+	        return;
+	    }
 	    for (var i = 0, li = entity.children.length; i < li; i++) {
 	        var child = entity.children[i];
-	        var childConfig = config.children[i];
-	        var comps = childConfig.comps;
+	        var comps = child['$componentConfigs'];
 	        if (comps) {
 	            var compManager = child.entityAdaptor.components;
 	            for (var _i = 0, comps_1 = comps; _i < comps_1.length; _i++) {
 	                var comp = comps_1[_i];
 	                var component = compManager.addComponent(comp.script, false);
-	                component.enabled = comp.enabled;
-	                injectProps(app, component, comp.props, pid);
+	                component.enabled = comp.enabled !== false;
+	                injectProps(app, component, comp, pid);
 	                compManager.$onAddComponent(component, true);
 	            }
 	        }
-	        setupComponent(app, childConfig, child, pid);
+	        setupComponent(app, child, pid);
 	    }
 	}
 	/**
 	 * 使能组件
 	 * @param app
-	 * @param config
 	 * @param entity
 	 * @param pid
 	 */
-	function enableComponent(app, config, entity, pid) {
+	function enableComponent(app, entity, pid) {
 	    for (var i = 0, li = entity.children.length; i < li; i++) {
 	        var child = entity.children[i];
-	        var comps = config.children[i].comps;
-	        if (comps) {
-	            var compManager = child.entityAdaptor.components;
-	            compManager.setActive(true);
-	        }
+	        var compManager = child.entityAdaptor.components;
+	        compManager.setActive(true);
+	        enableComponent(app, child);
 	    }
 	}
 	/**
@@ -134,8 +345,11 @@
 	 * @param pid
 	 */
 	function injectProps(app, target, props, pid) {
-	    if (props) {
+	    if (props && target) {
 	        for (var field in props) {
+	            if (specialProps.indexOf(field) >= 0) {
+	                continue;
+	            }
 	            var value = props[field];
 	            if (typeof value === 'object') { //复杂数据
 	                transComplexProps(app, target, field, value);
@@ -146,13 +360,25 @@
 	        }
 	    }
 	}
+	function injectEvent(app, listeners, pid) {
+	    var event = new QunityEvent();
+	    for (var _i = 0, listeners_1 = listeners; _i < listeners_1.length; _i++) {
+	        var listener = listeners_1[_i];
+	        listener.entity = protocols[Protocols.ENTITY](app, '', listener.entity, pid);
+	        event.addListenerConfig(listener);
+	    }
+	    return event;
+	}
 	function transComplexProps(app, target, field, value, pid) {
 	    var trulyValue = value;
 	    var override = false;
 	    switch (value.type) {
+	        case 'event':
+	            trulyValue = injectEvent(app, value.payload, pid);
+	            break;
 	        case 'raw':
 	            override = true;
-	            trulyValue = value.data;
+	            trulyValue = value.payload;
 	            break;
 	        default:
 	            if (Array.isArray(value) && !target[field]) {
@@ -177,7 +403,7 @@
 	    var trulyValue = value;
 	    if (typeof value === 'string') {
 	        var hit = void 0;
-	        var protocolGroups = [protocols, app.options.protocols];
+	        var protocolGroups = [protocols, app.adaptorOptions.protocols];
 	        for (var _i = 0, protocolGroups_1 = protocolGroups; _i < protocolGroups_1.length; _i++) {
 	            var protocols_1 = protocolGroups_1[_i];
 	            for (var protocol in protocols_1) {
@@ -195,74 +421,103 @@
 	    }
 	    target[field] = trulyValue;
 	}
+	//parse scene//
+	function parseViewDoc(app, docSource) {
+	    function p(props) {
+	        injectProps(app, this, props);
+	        if (props.active !== false && this.setActive) {
+	            this.setActive(true);
+	        }
+	        return this;
+	    }
+	    function kv(props) {
+	        for (var key in props) {
+	            this[key] = props[key];
+	        }
+	        return this;
+	    }
+	    function c(children) {
+	        for (var _i = 0, children_2 = children; _i < children_2.length; _i++) {
+	            var child = children_2[_i];
+	            app.addDisplayNode(child, this);
+	        }
+	        return this;
+	    }
+	    function s(components) {
+	        Object.defineProperty(this, '$componentConfigs', {
+	            value: components,
+	            writable: false,
+	            enumerable: false,
+	        });
+	        return this;
+	    }
+	    var pixiNodes = {};
+	    var requireContext = {
+	        'qunity': {
+	            Doc: function (props) {
+	                var obj = {
+	                    kv: kv,
+	                    p: p,
+	                };
+	                setTimeout(function () {
+	                    delete obj['kv'];
+	                    delete obj['p'];
+	                });
+	                return obj.p(props);
+	            }
+	        },
+	        'qunity-pixi': pixiNodes,
+	    };
+	    function requireMethod(id) {
+	        return requireContext[id];
+	    }
+	    var entityNames = Object.keys(app.entityDefs);
+	    var _loop_1 = function (entityName) {
+	        pixiNodes[entityName] = function (props) {
+	            var entity = app.createEntity(entityName);
+	            if (props.uuid !== undefined) {
+	                app.entityMap[props.uuid] = entity;
+	            }
+	            entity['kv'] = kv;
+	            entity['p'] = p;
+	            entity['c'] = c;
+	            entity['s'] = s;
+	            setTimeout(function () {
+	                delete entity['kv'];
+	                delete entity['p'];
+	                delete entity['c'];
+	                delete entity['s'];
+	            });
+	            return p.call(entity, props);
+	        };
+	    };
+	    for (var _i = 0, entityNames_1 = entityNames; _i < entityNames_1.length; _i++) {
+	        var entityName = entityNames_1[_i];
+	        _loop_1(entityName);
+	    }
+	    var func = new Function('require', docSource);
+	    var doc = func(requireMethod);
+	    return doc;
+	}
 	//# sourceMappingURL=interpreter.js.map
 
-	/**
-	 * Created by rockyl on 2020-03-09.
-	 */
-	/**
-	 * 线性插值
-	 * @param begin number
-	 * @param end number
-	 * @param t number
-	 * @param allowOutOfBounds
-	 * @return number
-	 */
-	function lerp(begin, end, t, allowOutOfBounds) {
-	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
-	    if (!allowOutOfBounds) {
-	        t = Math.max(0, Math.min(1, t));
+	var AssetsManager = /** @class */ (function () {
+	    function AssetsManager(app) {
+	        this._assetCache = {};
+	        this._app = app;
 	    }
-	    var sign = end - begin;
-	    sign = sign > 0 ? 1 : (sign < 0 ? -1 : 0);
-	    var distance = Math.abs(end - begin);
-	    return begin + distance * t * sign;
-	}
-	/**
-	 * 线性插值
-	 * @param begin
-	 * @param end
-	 * @param t number
-	 * @param allowOutOfBounds
-	 * @return number
-	 */
-	function lerpVector2(begin, end, t, allowOutOfBounds) {
-	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
-	    return {
-	        x: lerp(begin.x, end.x, t, allowOutOfBounds),
-	        y: lerp(begin.y, end.y, t, allowOutOfBounds),
+	    AssetsManager.prototype.addAsset = function (asset, opt) {
+	        this._assetCache[opt.uuid || opt.name || opt.url] = asset;
 	    };
-	}
-	/**
-	 * 线性插值
-	 * @param begin
-	 * @param end
-	 * @param t number
-	 * @param allowOutOfBounds
-	 * @return number
-	 */
-	function lerpVector3(begin, end, t, allowOutOfBounds) {
-	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
-	    return {
-	        x: lerp(begin.x, end.x, t, allowOutOfBounds),
-	        y: lerp(begin.y, end.y, t, allowOutOfBounds),
-	        z: lerp(begin.z, end.z, t, allowOutOfBounds),
+	    AssetsManager.prototype.getAsset = function (uuid) {
+	        return this._assetCache[uuid];
 	    };
-	}
-	/**
-	 * json5字符串转对象
-	 * @param str
-	 */
-	function decodeJson5(str) {
-	    var func = new Function('return ' + str);
-	    try {
-	        return func();
-	    }
-	    catch (e) {
-	        console.warn(e);
-	    }
-	}
-	//# sourceMappingURL=utils.js.map
+	    AssetsManager.prototype.clean = function () {
+	        this._assetCache = {};
+	    };
+	    return AssetsManager;
+	}());
+	//# sourceMappingURL=assets-manager.js.map
 
 	/**
 	 * Created by rockyl on 2020-03-08.
@@ -283,15 +538,36 @@
 	         * @private
 	         */
 	        this._mainLoop = function (delta) {
-	            _this._options.traverseFunc(_this._options.stage, _this._onHit.bind(_this, delta));
+	            _this._adaptorOptions.traverseFunc(_this._adaptorOptions.stage, _this._onHit.bind(_this, delta));
 	        };
+	        this._assetsManager = new AssetsManager(this);
 	    }
-	    Object.defineProperty(Application.prototype, "options", {
+	    Object.defineProperty(Application.prototype, "launchOptions", {
 	        /**
-	         * 配置
+	         * 启动配置
 	         */
 	        get: function () {
-	            return this._options;
+	            return this._launchOptions;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Application.prototype, "adaptorOptions", {
+	        /**
+	         * 适配配置
+	         */
+	        get: function () {
+	            return this._adaptorOptions;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Application.prototype, "context", {
+	        /**
+	         * 获取上下文
+	         */
+	        get: function () {
+	            return this._adaptorOptions.context;
 	        },
 	        enumerable: true,
 	        configurable: true
@@ -301,7 +577,7 @@
 	         * 舞台实例
 	         */
 	        get: function () {
-	            return this._options.stage;
+	            return this._adaptorOptions.stage;
 	        },
 	        enumerable: true,
 	        configurable: true
@@ -314,12 +590,11 @@
 	     */
 	    Application.prototype.launch = function (options, onProgress, onComplete) {
 	        var _this = this;
-	        this.loadResource([
-	            { name: 'manifest.json', url: 'manifest.json' }
-	        ], null, function () {
-	            var manifest = _this._manifest = _this.getRes('manifest.json').data;
+	        this._launchOptions = options;
+	        this.loadAsset({ url: 'manifest.json' }, function (asset) {
+	            var manifest = _this._manifest = asset;
 	            var entryScene = manifest.scene.entryScene;
-	            _this.launchScene(entryScene, options, onProgress, onComplete);
+	            _this.launchScene(entryScene, {}, onProgress, onComplete);
 	        });
 	    };
 	    /**
@@ -342,21 +617,21 @@
 	        var scenes = this._manifest.scene.scenes;
 	        var sceneUrl = scenes[name];
 	        if (this._sceneConfigCache[name]) {
-	            onComplete(this._sceneConfigCache[name]);
+	            this._instantiateScene(this._sceneConfigCache[name], onComplete);
 	            return;
 	        }
-	        this.loadResource([
-	            { name: name + '.scene', url: sceneUrl, options: { xhrType: 'text' } },
-	        ], null, function () {
-	            var res = _this.getRes('main.scene');
-	            var sceneConfig = decodeJson5(res.data);
-	            _this._sceneConfigCache[name] = sceneConfig;
-	            setTimeout(function () {
-	                _this.loadResource(sceneConfig.assets, onProgress, function () {
-	                    onComplete(sceneConfig);
-	                });
-	            });
+	        this.loadAsset({ url: sceneUrl, options: { xhrType: 'text' } }, function (asset) {
+	            var sceneConfig = asset;
+	            _this._sceneConfigCache[name] = asset;
+	            /*this.loadAssets(sceneConfig.assets, onProgress, () => {
+	                onComplete(sceneConfig);
+	            });*/
+	            _this._instantiateScene(sceneConfig, onComplete);
 	        });
+	    };
+	    Application.prototype._instantiateScene = function (sceneConfig, callback) {
+	        var scene = this.instantiate(sceneConfig);
+	        callback && callback(scene);
 	    };
 	    /**
 	     * 启动场景
@@ -367,8 +642,7 @@
 	     */
 	    Application.prototype.launchScene = function (name, options, onProgress, onComplete) {
 	        var _this = this;
-	        this.loadScene(name, onProgress, function (sceneConfig) {
-	            var scene = _this.instantiate(sceneConfig);
+	        this.loadScene(name, onProgress, function (scene) {
 	            _this.addDisplayNode(scene, _this.stage);
 	            onComplete && onComplete();
 	        });
@@ -379,7 +653,7 @@
 	     * @return mainLoop 主循环方法
 	     */
 	    Application.prototype.setupAdaptor = function (options) {
-	        this._options = options;
+	        this._adaptorOptions = options;
 	        return this._mainLoop;
 	    };
 	    /**
@@ -440,20 +714,30 @@
 	        var clazz = this._entityDefs[type];
 	        if (clazz) {
 	            var entity = new clazz();
-	            var entityAdaptor = new this._options.EntityAdaptor(entity, this);
+	            var entityAdaptor = new this._adaptorOptions.EntityAdaptor(entity, this);
 	            return entity;
 	        }
 	        else {
 	            throw new Error("type [" + type + "] not exists.");
 	        }
 	    };
+	    Object.defineProperty(Application.prototype, "entityDefs", {
+	        /**
+	         * 获取全部已注册的实体定义
+	         */
+	        get: function () {
+	            return this._entityDefs;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    /**
 	     * 添加显示节点
 	     * @param node
 	     * @param parent
 	     */
 	    Application.prototype.addDisplayNode = function (node, parent) {
-	        this._options.addDisplayFunc(node, parent);
+	        this._adaptorOptions.addDisplayFunc(node, parent);
 	    };
 	    /**
 	     * 遍历显示节点
@@ -461,7 +745,7 @@
 	     * @param callback
 	     */
 	    Application.prototype.traverseDisplayNode = function (node, callback) {
-	        this._options.traverseFunc(node, callback);
+	        this._adaptorOptions.traverseFunc(node, callback);
 	    };
 	    /**
 	     * 冒泡显示节点
@@ -469,7 +753,19 @@
 	     * @param callback
 	     */
 	    Application.prototype.bubblingDisplayNode = function (node, callback) {
-	        this._options.bubblingFunc(node, callback);
+	        this._adaptorOptions.bubblingFunc(node, callback);
+	    };
+	    /**
+	     * 加载单项资源
+	     * @param config
+	     * @param onComplete
+	     */
+	    Application.prototype.loadAsset = function (config, onComplete) {
+	        var _this = this;
+	        this._adaptorOptions.loadAssetFunc(config, function (item, opt) {
+	            _this._assetsManager.addAsset(item, opt);
+	            onComplete && onComplete(item);
+	        });
 	    };
 	    /**
 	     * 加载资源
@@ -477,15 +773,27 @@
 	     * @param onProgress
 	     * @param onComplete
 	     */
-	    Application.prototype.loadResource = function (configs, onProgress, onComplete) {
-	        this._options.loadResourceFunc(configs, onProgress, onComplete);
+	    Application.prototype.loadAssets = function (configs, onProgress, onComplete) {
+	        var total = configs.length;
+	        var loaded = 0;
+	        for (var _i = 0, configs_1 = configs; _i < configs_1.length; _i++) {
+	            var config = configs_1[_i];
+	            this.loadAsset(config, onItemComplete);
+	        }
+	        function onItemComplete(item) {
+	            loaded++;
+	            onProgress && onProgress(loaded, total, item);
+	            if (loaded >= total) {
+	                onComplete && onComplete();
+	            }
+	        }
 	    };
 	    /**
 	     * 获取资源
-	     * @param name
+	     * @param uuid
 	     */
-	    Application.prototype.getRes = function (name) {
-	        return this._options.getResFunc(name);
+	    Application.prototype.getAsset = function (uuid) {
+	        return this._assetsManager.getAsset(uuid);
 	    };
 	    /**
 	     * 遍历整个渲染树
@@ -528,60 +836,6 @@
 	    return Application;
 	}());
 	//# sourceMappingURL=Application.js.map
-
-	/**
-	 * Created by rockyl on 2018/11/5.
-	 */
-	var HASH_CODE_INK = 0;
-	function getHashCode() {
-	    return ++HASH_CODE_INK;
-	}
-	/**
-	 * 哈希对象
-	 */
-	var HashObject = /** @class */ (function () {
-	    function HashObject() {
-	        this._hashCode = getHashCode();
-	    }
-	    Object.defineProperty(HashObject.prototype, "hashCode", {
-	        get: function () {
-	            return this._hashCode;
-	        },
-	        enumerable: true,
-	        configurable: true
-	    });
-	    return HashObject;
-	}());
-	//# sourceMappingURL=HashObject.js.map
-
-	/*! *****************************************************************************
-	Copyright (c) Microsoft Corporation. All rights reserved.
-	Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-	this file except in compliance with the License. You may obtain a copy of the
-	License at http://www.apache.org/licenses/LICENSE-2.0
-
-	THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-	KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-	WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-	MERCHANTABLITY OR NON-INFRINGEMENT.
-
-	See the Apache Version 2.0 License for specific language governing permissions
-	and limitations under the License.
-	***************************************************************************** */
-	/* global Reflect, Promise */
-
-	var extendStatics = function(d, b) {
-	    extendStatics = Object.setPrototypeOf ||
-	        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-	        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-	    return extendStatics(d, b);
-	};
-
-	function __extends(d, b) {
-	    extendStatics(d, b);
-	    function __() { this.constructor = d; }
-	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	}
 
 	/**
 	 * Created by rockyl on 2019-07-28.
@@ -673,9 +927,9 @@
 	    };
 	    /**
 	     * 时钟更新
-	     * @param t
+	     * @param delta
 	     */
-	    Component.prototype.update = function (t) {
+	    Component.prototype.update = function (delta) {
 	    };
 	    /**
 	     * 当被销毁时
@@ -753,6 +1007,24 @@
 	            node.invokeOnComponents && node.invokeOnComponents(methodName, args);
 	        });
 	    };
+	    Component.prototype.addComponent = function (componentId, enabled) {
+	        return this.entity.addComponent(componentId, enabled);
+	    };
+	    Component.prototype.getAllComponents = function () {
+	        return this.entity.getAllComponents();
+	    };
+	    Component.prototype.getComponent = function (componentId) {
+	        return this.entity.getComponent(componentId);
+	    };
+	    Component.prototype.getComponents = function (componentId) {
+	        return this.entity.getComponents(componentId);
+	    };
+	    Component.prototype.removeAllComponents = function () {
+	        return this.entity.removeAllComponents();
+	    };
+	    Component.prototype.removeComponent = function (componentId, index) {
+	        return this.entity.removeComponent(componentId, index);
+	    };
 	    return Component;
 	}(HashObject));
 	//# sourceMappingURL=Component.js.map
@@ -773,6 +1045,11 @@
 	    ComponentManager.prototype.applyProxy = function () {
 	        var _this = this;
 	        var entity = this._entityAdaptor.entity;
+	        Object.defineProperty(entity, 'stage', {
+	            get: function () {
+	                return this.entityAdaptor.app.stage;
+	            }
+	        });
 	        entity.addComponent = function (componentId, enabled) {
 	            if (enabled === void 0) { enabled = true; }
 	            return _this.addComponent(componentId, true, enabled);
@@ -788,6 +1065,9 @@
 	        };
 	        entity.getComponents = function (componentId) {
 	            return _this.getComponents(componentId);
+	        };
+	        entity.getAllComponents = function () {
+	            return _this.getAllComponents();
 	        };
 	        entity.invokeOnComponents = function (methodName, args) {
 	            return _this.invokeOnComponents(methodName, args);
@@ -865,6 +1145,7 @@
 	     * @param index
 	     */
 	    ComponentManager.prototype.removeComponent = function (componentId, index) {
+	        if (index === void 0) { index = 0; }
 	        var components;
 	        switch (typeof componentId) {
 	            case 'string':
@@ -1061,6 +1342,394 @@
 	//# sourceMappingURL=ComponentManager.js.map
 
 	/**
+	 * Created by rockyl on 2018/11/9.
+	 *
+	 * 属性装饰器
+	 */
+	/**
+	 * 属性修改时触发
+	 * @param onModify
+	 */
+	function fieldChanged(onModify) {
+	    return function (target, key) {
+	        var privateKey = '_' + key;
+	        Object.defineProperty(target, key, {
+	            enumerable: true,
+	            get: function () {
+	                return this[privateKey];
+	            },
+	            set: function (v) {
+	                var oldValue = this[privateKey];
+	                if (oldValue !== v) {
+	                    this[privateKey] = v;
+	                    onModify.apply(this, [v, key, oldValue]);
+	                }
+	            }
+	        });
+	    };
+	}
+	/**
+	 * 属性变脏时设置宿主的dirty属性为true
+	 */
+	var dirtyFieldDetector = fieldChanged(function (value, key, oldValue) {
+	    this['__fieldDirty'] = true;
+	});
+	/**
+	 * 深度属性变脏时设置宿主的dirty属性为true
+	 */
+	var deepDirtyFieldDetector = fieldChanged(function (value, key, oldValue) {
+	    var scope = this;
+	    scope['__fieldDirty'] = true;
+	    if (typeof value === 'object') {
+	        if (value.hasOwnProperty('onChange')) {
+	            value['onChange'] = this['$onModify'];
+	        }
+	        else {
+	            mutateObject(value, onChange);
+	        }
+	    }
+	    function onChange() {
+	        scope['__fieldDirty'] = true;
+	    }
+	});
+	/**
+	 * 属性变脏时触发onModify方法
+	 */
+	var dirtyFieldTrigger = fieldChanged(function (value, key, oldValue) {
+	    this['$onModify'] && this['$onModify'](value, key, oldValue);
+	});
+	/**
+	 * 深入属性变脏时触发onModify方法
+	 */
+	var deepDirtyFieldTrigger = fieldChanged(function (value, key, oldValue) {
+	    var onModify = this['$onModify'];
+	    var scope = this;
+	    if (onModify) {
+	        onModify.call(scope, value, key, oldValue);
+	        if (typeof value === 'object') {
+	            if (value.hasOwnProperty('onChange')) {
+	                value['onChange'] = onChange;
+	            }
+	            else {
+	                mutateObject(value, onChange);
+	            }
+	        }
+	    }
+	    function onChange(_value, _key, _oldValue) {
+	        onModify.call(scope, value, key, oldValue, _key);
+	    }
+	});
+	function mutateObject(data, onChange) {
+	    if (!data['__mutated__']) {
+	        for (var key in data) {
+	            mutateProp(data, key, data[key], onChange);
+	        }
+	        Object.defineProperty(data, "__mutated__", {
+	            value: true,
+	            writable: false,
+	            enumerable: false,
+	            configurable: false
+	        });
+	    }
+	}
+	function mutateProp(data, key, value, onChange) {
+	    Object.defineProperty(data, key, {
+	        enumerable: true,
+	        configurable: false,
+	        get: function () {
+	            return value;
+	        },
+	        set: function (v) {
+	            var oldValue = value;
+	            if (v == value)
+	                return;
+	            value = v;
+	            onChange(value, key, oldValue);
+	        }
+	    });
+	}
+	//# sourceMappingURL=dirty-field.js.map
+
+	/**
+	 * Created by rockyl on 2020-04-01.
+	 */
+	/**
+	 * 隐藏的属性
+	 */
+	function hidden() {
+	}
+	//# sourceMappingURL=editor.js.map
+
+	/**
+	 * Created by rockyl on 2018/11/6.
+	 *
+	 */
+	/**
+	 * 2D矢量
+	 */
+	var Vector2 = /** @class */ (function (_super) {
+	    __extends(Vector2, _super);
+	    /**
+	     * 创建一个2D矢量
+	     * @param x x分量
+	     * @param y y分量
+	     * @param onChange 当改变时触发
+	     */
+	    function Vector2(x, y, onChange) {
+	        if (x === void 0) { x = 0; }
+	        if (y === void 0) { y = 0; }
+	        var _this = _super.call(this) || this;
+	        _this.onChange = onChange;
+	        _this.setXY(x, y);
+	        return _this;
+	    }
+	    Vector2.prototype.$onModify = function (value, key, oldValue) {
+	        this.onChange && this.onChange(value, key, oldValue);
+	    };
+	    /**
+	     * 设置分量
+	     * @param x
+	     * @param y
+	     */
+	    Vector2.prototype.setXY = function (x, y) {
+	        if (x === void 0) { x = 0; }
+	        if (y === void 0) { y = 0; }
+	        this.x = x;
+	        this.y = y;
+	        return this;
+	    };
+	    /**
+	     * 从一个向量拷贝分量
+	     * @param v2
+	     */
+	    Vector2.prototype.copyFrom = function (v2) {
+	        this.x = v2.x;
+	        this.y = v2.y;
+	        return this;
+	    };
+	    /**
+	     * 克隆出一个向量
+	     */
+	    Vector2.prototype.clone = function () {
+	        return new Vector2(this.x, this.y);
+	    };
+	    /**
+	     * 把向量置空
+	     */
+	    Vector2.prototype.zero = function () {
+	        this.x = 0;
+	        this.y = 0;
+	        return this;
+	    };
+	    Object.defineProperty(Vector2.prototype, "isZero", {
+	        /**
+	         * 是不是一个0向量
+	         */
+	        get: function () {
+	            return this.x == 0 && this.y == 0;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    /**
+	     * 单位化向量
+	     */
+	    Vector2.prototype.normalize = function () {
+	        var len = this.length;
+	        if (len == 0) {
+	            this.x = 1;
+	            return this;
+	        }
+	        this.x /= len;
+	        this.y /= len;
+	        return this;
+	    };
+	    Object.defineProperty(Vector2.prototype, "isNormalized", {
+	        /**
+	         * 是不是一个单位向量
+	         */
+	        get: function () {
+	            return this.length == 1.0;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    /**
+	     * 截取向量长度
+	     * @param max
+	     */
+	    Vector2.prototype.truncate = function (max) {
+	        this.length = Math.min(max, this.length);
+	        return this;
+	    };
+	    /**
+	     * 向量反向
+	     */
+	    Vector2.prototype.reverse = function () {
+	        this.x = -this.x;
+	        this.y = -this.y;
+	        return this;
+	    };
+	    /**
+	     * 获取点乘
+	     * @param v2
+	     */
+	    Vector2.prototype.dotProd = function (v2) {
+	        return this.x * v2.x + this.y * v2.y;
+	    };
+	    /**
+	     * 获取叉乘
+	     * @param v2
+	     */
+	    Vector2.prototype.crossProd = function (v2) {
+	        return this.x * v2.y - this.y * v2.x;
+	    };
+	    /**
+	     * 获取长度的平方
+	     * @param v2
+	     */
+	    Vector2.prototype.distSQ = function (v2) {
+	        var dx = v2.x - this.x;
+	        var dy = v2.y - this.y;
+	        return dx * dx + dy * dy;
+	    };
+	    /**
+	     * 获取两个向量的距离
+	     * @param v2
+	     */
+	    Vector2.prototype.distance = function (v2) {
+	        return Math.sqrt(this.distSQ(v2));
+	    };
+	    /**
+	     * 向量加法
+	     * @param v2
+	     */
+	    Vector2.prototype.add = function (v2) {
+	        this.x += v2.x;
+	        this.y += v2.y;
+	        return this;
+	    };
+	    /**
+	     * 向量减法
+	     * @param v2
+	     */
+	    Vector2.prototype.subtract = function (v2) {
+	        this.x -= v2.x;
+	        this.y -= v2.y;
+	        return this;
+	    };
+	    /**
+	     * 向量乘于某个数
+	     * @param value
+	     */
+	    Vector2.prototype.multiply = function (value) {
+	        this.x *= value;
+	        this.y *= value;
+	        return this;
+	    };
+	    /**
+	     * 向量除于某个数
+	     * @param value
+	     */
+	    Vector2.prototype.divide = function (value) {
+	        this.x /= value;
+	        this.y /= value;
+	        return this;
+	    };
+	    Object.defineProperty(Vector2.prototype, "angle", {
+	        get: function () {
+	            return this.radian * 180 / Math.PI;
+	        },
+	        /**
+	         * 向量角度
+	         * @param value
+	         */
+	        set: function (value) {
+	            this.radian = value * Math.PI / 180;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Vector2.prototype, "radian", {
+	        get: function () {
+	            return Math.atan2(this.y, this.x);
+	        },
+	        /**
+	         * 向量弧度
+	         * @param value
+	         */
+	        set: function (value) {
+	            var len = this.length;
+	            this.setXY(Math.cos(value) * len, Math.sin(value) * len);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    /**
+	     * 是否等于某个向量
+	     * @param v2
+	     */
+	    Vector2.prototype.equals = function (v2) {
+	        return this.x == v2.x && this.y == v2.y;
+	    };
+	    Object.defineProperty(Vector2.prototype, "length", {
+	        /**
+	         * 向量长度
+	         * @param value
+	         */
+	        get: function () {
+	            return Math.sqrt(this.lengthSQ);
+	        },
+	        set: function (value) {
+	            var a = this.radian;
+	            this.setXY(Math.cos(a) * value, Math.sin(a) * value);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Vector2.prototype, "lengthSQ", {
+	        /**
+	         * 获取向量长度的平方
+	         */
+	        get: function () {
+	            return this.x * this.x + this.y * this.y;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Vector2.prototype, "slope", {
+	        /**
+	         * 获取向量斜率
+	         */
+	        get: function () {
+	            return this.y / this.x;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Vector2.prototype.toString = function () {
+	        return "[Vector2 (x:" + this.x + ", y:" + this.y + ")]";
+	    };
+	    Vector2.prototype.toObj = function () {
+	        return { x: this.x, y: this.y };
+	    };
+	    Vector2.prototype.toArray = function () {
+	        return [this.x, this.y];
+	    };
+	    Vector2.corner = function (v1, v2) {
+	        return Math.acos(v1.dotProd(v2) / (v1.length * v2.length));
+	    };
+	    __decorate([
+	        dirtyFieldTrigger
+	    ], Vector2.prototype, "x", void 0);
+	    __decorate([
+	        dirtyFieldTrigger
+	    ], Vector2.prototype, "y", void 0);
+	    return Vector2;
+	}(HashObject));
+	//# sourceMappingURL=vectors.js.map
+
+	/**
 	 * Created by rockyl on 2020-03-07.
 	 */
 	/**
@@ -1123,13 +1792,17 @@
 	     * 应用代理
 	     */
 	    EntityAdaptorBase.prototype.applyProxy = function () {
+	        var _this = this;
 	        var entity = this._entity;
-	        entity.$active = true;
+	        entity.$active = false;
 	        Object.defineProperty(entity, 'active', {
 	            get: function () {
 	                return this.entityAdaptor.getActive();
 	            }
 	        });
+	        entity.instantiate = function (docType) {
+	            return _this._app.instantiate(docType);
+	        };
 	        entity.setActive = this.setActive.bind(this);
 	    };
 	    /**
@@ -1168,79 +1841,121 @@
 	//# sourceMappingURL=EntityAdaptor.js.map
 
 	/**
-	 * Created by rockyl on 2018/11/9.
-	 *
-	 * 装饰器
+	 * Created by rockyl on 2020-03-09.
 	 */
 	/**
-	 * 属性修改时触发
-	 * @param onModify
+	 * 线性插值
+	 * @param begin number
+	 * @param end number
+	 * @param t number
+	 * @param allowOutOfBounds
+	 * @return number
 	 */
-	function fieldChanged(onModify) {
-	    return function (target, key) {
-	        var privateKey = '_' + key;
-	        Object.defineProperty(target, key, {
-	            enumerable: true,
-	            get: function () {
-	                return this[privateKey];
-	            },
-	            set: function (v) {
-	                var oldValue = this[privateKey];
-	                if (oldValue !== v) {
-	                    this[privateKey] = v;
-	                    onModify.apply(this, [v, key, oldValue]);
-	                }
-	            }
-	        });
+	function lerp(begin, end, t, allowOutOfBounds) {
+	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
+	    if (!allowOutOfBounds) {
+	        t = Math.max(0, Math.min(1, t));
+	    }
+	    var sign = end - begin;
+	    sign = sign > 0 ? 1 : (sign < 0 ? -1 : 0);
+	    var distance = Math.abs(end - begin);
+	    return begin + distance * t * sign;
+	}
+	/**
+	 * 线性插值
+	 * @param begin
+	 * @param end
+	 * @param t number
+	 * @param allowOutOfBounds
+	 * @return number
+	 */
+	function lerpVector2(begin, end, t, allowOutOfBounds) {
+	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
+	    return {
+	        x: lerp(begin.x, end.x, t, allowOutOfBounds),
+	        y: lerp(begin.y, end.y, t, allowOutOfBounds),
 	    };
 	}
 	/**
-	 * 属性变脏时设置宿主的dirty属性为true
+	 * 线性插值
+	 * @param begin
+	 * @param end
+	 * @param t number
+	 * @param allowOutOfBounds
+	 * @return number
 	 */
-	var dirtyFieldDetector = fieldChanged(function (value, key, oldValue) {
-	    this['__fieldDirty'] = true;
-	});
+	function lerpVector3(begin, end, t, allowOutOfBounds) {
+	    if (allowOutOfBounds === void 0) { allowOutOfBounds = false; }
+	    return {
+	        x: lerp(begin.x, end.x, t, allowOutOfBounds),
+	        y: lerp(begin.y, end.y, t, allowOutOfBounds),
+	        z: lerp(begin.z, end.z, t, allowOutOfBounds),
+	    };
+	}
 	/**
-	 * 深度属性变脏时设置宿主的dirty属性为true
+	 * json5字符串转对象
+	 * @param str
 	 */
-	var deepDirtyFieldDetector = fieldChanged(function (value, key, oldValue) {
-	    var scope = this;
-	    scope['__fieldDirty'] = true;
-	    if (typeof value === 'object') {
-	        value['onModify'] = function () {
-	            scope['__fieldDirty'] = true;
-	        };
+	function decodeJson5(str) {
+	    var func = new Function('return ' + str);
+	    try {
+	        return func();
 	    }
-	});
+	    catch (e) {
+	        console.warn(e);
+	    }
+	}
 	/**
-	 * 属性变脏时触发onModify方法
+	 * 属性注入方法
+	 * @param target 目标对象
+	 * @param data 被注入对象
+	 * @param callback 自定义注入方法
+	 * @param ignoreMethod 是否忽略方法
+	 * @param ignoreNull 是否忽略Null字段
+	 *
+	 * @return 是否有字段注入
 	 */
-	var dirtyFieldTrigger = fieldChanged(function (value, key, oldValue) {
-	    this['onModify'] && this['onModify'](value, key, oldValue);
-	});
-	/**
-	 * 深入属性变脏时触发onModify方法
-	 */
-	var deepDirtyFieldTrigger = fieldChanged(function (value, key, oldValue) {
-	    if (this['onModify']) {
-	        this['onModify'](value, key, oldValue);
-	        if (typeof value === 'object') {
-	            value['onModify'] = this['onModify'];
+	function injectProp(target, data, callback, ignoreMethod, ignoreNull) {
+	    if (ignoreMethod === void 0) { ignoreMethod = true; }
+	    if (ignoreNull === void 0) { ignoreNull = true; }
+	    if (!target || !data) {
+	        return false;
+	    }
+	    var result = false;
+	    for (var key in data) {
+	        var value = data[key];
+	        if ((!ignoreMethod || typeof value != 'function') && (!ignoreNull || value != null)) {
+	            if (callback) {
+	                callback(target, key, value);
+	            }
+	            else {
+	                try {
+	                    target[key] = value;
+	                }
+	                catch (e) {
+	                }
+	            }
+	            result = true;
 	        }
 	    }
-	});
+	    return result;
+	}
+	//# sourceMappingURL=utils.js.map
 
 	exports.Application = Application;
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
 	exports.EntityAdaptorBase = EntityAdaptorBase;
 	exports.HashObject = HashObject;
+	exports.Vector2 = Vector2;
 	exports.decodeJson5 = decodeJson5;
 	exports.deepDirtyFieldDetector = deepDirtyFieldDetector;
 	exports.deepDirtyFieldTrigger = deepDirtyFieldTrigger;
 	exports.dirtyFieldDetector = dirtyFieldDetector;
 	exports.dirtyFieldTrigger = dirtyFieldTrigger;
 	exports.fieldChanged = fieldChanged;
+	exports.hidden = hidden;
+	exports.injectProp = injectProp;
 	exports.lerp = lerp;
 	exports.lerpVector2 = lerpVector2;
 	exports.lerpVector3 = lerpVector3;

@@ -1,7 +1,7 @@
 /**
  * Created by rockyl on 2018/11/9.
  *
- * 装饰器
+ * 属性装饰器
  */
 /**
  * 属性修改时触发
@@ -24,7 +24,3 @@ export declare const dirtyFieldTrigger: (target: any, key: string) => void;
  * 深入属性变脏时触发onModify方法
  */
 export declare const deepDirtyFieldTrigger: (target: any, key: string) => void;
-/**
- * 隐藏的属性
- */
-export declare function hidden(): void;

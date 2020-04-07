@@ -4,25 +4,30 @@
 
 import {IEntity} from "./IEntity";
 import {Application} from "./Application";
-import {protocols} from "./protocols";
+import {Protocols, protocols} from "./protocols";
+import {QunityEvent} from "./QunityEvent";
 
 let prefabID: number = 0;
+
+const specialProps = ['enabled', 'active', 'script',];
 
 /**
  * 实例化节点树
  * @param app
- * @param docConfig
+ * @param docSource
  */
-export function instantiate(app: Application, docConfig: any) {
-	let pid;
-	if (docConfig.docType === 'prefab') {
-		pid = ++prefabID;
-	}
-	const rootEntity = setupEntityTree(app, docConfig, pid);
-	setupComponent(app, docConfig, rootEntity, pid);
-	enableComponent(app, docConfig, rootEntity, pid);
+export function instantiate(app: Application, docSource: any) {
+	if (docSource) {
+		let doc = parseViewDoc(app, docSource);
+		let pid;
+		if (doc.type === 'prefab') {
+			pid = ++prefabID;
+		}
+		setupComponent(app, doc.root, pid);
+		enableComponent(app, doc.root, pid);
 
-	return rootEntity;
+		return doc.root;
+	}
 }
 
 /**
@@ -34,19 +39,32 @@ export function instantiate(app: Application, docConfig: any) {
 function setupEntityTree(app: Application, config, pid?: number) {
 	let entity: IEntity = null;
 	if (config) {
-		let {type, name, uuid, children} = config;
+		let {$type = 'Node', name, uuid, children, active} = config;
+		if ($type === 'prefab') {
+			let {link} = config;
+			let prefabConfig = app.getAsset(link.replace('asset://', ''));
+			//todo make callback
+			//entity = instantiate(app, prefabConfig);
+		} else {
+			entity = app.createEntity($type);
+		}
 		if (pid !== undefined && uuid !== undefined) {
 			uuid = pid + '_' + uuid;
 		}
-		entity = app.createEntity(type);
 		if (name) {
 			entity['name'] = name;
 		}
 		entity['uuid'] = uuid;
 
-		injectProps(app, entity, config.props);
+		if (active !== false) {
+			entity.setActive(true);
+		}
 
-		app.entityMap[uuid] = entity;
+		injectProps(app, entity, config);
+
+		if (uuid !== undefined) {
+			app.entityMap[uuid] = entity;
+		}
 
 		if (children) {
 			for (let child of children) {
@@ -62,44 +80,43 @@ function setupEntityTree(app: Application, config, pid?: number) {
 /**
  * 装配组件
  * @param app
- * @param config
  * @param entity
  * @param pid
  */
-function setupComponent(app: Application, config, entity, pid?: number) {
+function setupComponent(app: Application, entity, pid?: number) {
+	if (!entity.children) {
+		return;
+	}
 	for (let i = 0, li = entity.children.length; i < li; i++) {
 		const child: IEntity = entity.children[i];
-		const childConfig = config.children[i];
-		let comps = childConfig.comps;
+		let comps = child['$componentConfigs'];
 		if (comps) {
 			let compManager = child.entityAdaptor.components;
 			for (let comp of comps) {
 				let component = compManager.addComponent(comp.script, false);
-				component.enabled = comp.enabled;
-				injectProps(app, component, comp.props, pid);
+				component.enabled = comp.enabled !== false;
+				injectProps(app, component, comp, pid);
 				compManager.$onAddComponent(component, true);
 			}
 		}
-		setupComponent(app, childConfig, child, pid);
+		setupComponent(app, child, pid);
 	}
 }
 
 /**
  * 使能组件
  * @param app
- * @param config
  * @param entity
  * @param pid
  */
-function enableComponent(app: Application, config, entity, pid?: number) {
+function enableComponent(app: Application, entity, pid?: number) {
 	for (let i = 0, li = entity.children.length; i < li; i++) {
 		const child: IEntity = entity.children[i];
 
-		let comps = config.children[i].comps;
-		if (comps) {
-			let compManager = child.entityAdaptor.components;
-			compManager.setActive(true);
-		}
+		let compManager = child.entityAdaptor.components;
+		compManager.setActive(true);
+
+		enableComponent(app, child, pid);
 	}
 }
 
@@ -111,11 +128,15 @@ function enableComponent(app: Application, config, entity, pid?: number) {
  * @param pid
  */
 function injectProps(app: Application, target: any, props: any, pid?: number) {
-	if (props) {
+	if (props && target) {
 		for (let field in props) {
+			if (specialProps.indexOf(field) >= 0) {
+				continue;
+			}
+
 			let value = props[field];
 			if (typeof value === 'object') {//复杂数据
-				transComplexProps(app, target, field, value)
+				transComplexProps(app, target, field, value);
 			} else {
 				transBaseProps(app, target, field, value, pid);
 			}
@@ -123,13 +144,25 @@ function injectProps(app: Application, target: any, props: any, pid?: number) {
 	}
 }
 
+function injectEvent(app: Application, listeners, pid?) {
+	let event = new QunityEvent();
+	for (const listener of listeners) {
+		listener.entity = protocols[Protocols.ENTITY](app, '', listener.entity, pid);
+		event.addListenerConfig(listener)
+	}
+	return event;
+}
+
 function transComplexProps(app: Application, target: any, field: string, value: any, pid?: number) {
 	let trulyValue = value;
 	let override = false;
 	switch (value.type) {
+		case 'event':
+			trulyValue = injectEvent(app, value.payload, pid);
+			break;
 		case 'raw':
 			override = true;
-			trulyValue = value.data;
+			trulyValue = value.payload;
 			break;
 		default:
 			if (Array.isArray(value) && !target[field]) {
@@ -156,7 +189,7 @@ function transBaseProps(app: Application, target: any, field: string, value: any
 	let trulyValue = value;
 	if (typeof value === 'string') {
 		let hit;
-		let protocolGroups = [protocols, app.options.protocols];
+		let protocolGroups = [protocols, app.adaptorOptions.protocols];
 		for (let protocols of protocolGroups) {
 			for (let protocol in protocols) {
 				if (value.indexOf(protocol) === 0) {
@@ -173,4 +206,87 @@ function transBaseProps(app: Application, target: any, field: string, value: any
 	}
 
 	target[field] = trulyValue;
+}
+
+//parse scene//
+function parseViewDoc(app: Application, docSource): any {
+	function p(props) {
+		injectProps(app, this, props);
+
+		if (props.active !== false && this.setActive) {
+			this.setActive(true);
+		}
+
+		return this;
+	}
+
+	function kv(props) {
+		for (let key in props) {
+			this[key] = props[key];
+		}
+		return this;
+	}
+
+	function c(children) {
+		for (let child of children) {
+			app.addDisplayNode(child, this);
+		}
+		return this;
+	}
+
+	function s(components) {
+		Object.defineProperty(this, '$componentConfigs', {
+			value: components,
+			writable: false,
+			enumerable: false,
+		});
+		return this;
+	}
+
+	const pixiNodes = {};
+	const requireContext = {
+		'qunity': {
+			Doc: function (props) {
+				let obj = {
+					kv,
+					p,
+				};
+				setTimeout(function () {
+					delete obj['kv'];
+					delete obj['p'];
+				});
+				return obj.p(props);
+			}
+		},
+		'qunity-pixi': pixiNodes,
+	};
+
+	function requireMethod(id) {
+		return requireContext[id];
+	}
+
+	const entityNames = Object.keys(app.entityDefs);
+	for (let entityName of entityNames) {
+		pixiNodes[entityName] = function (props) {
+			let entity = app.createEntity(entityName);
+			if (props.uuid !== undefined) {
+				app.entityMap[props.uuid] = entity;
+			}
+
+			entity['kv'] = kv;
+			entity['p'] = p;
+			entity['c'] = c;
+			entity['s'] = s;
+			setTimeout(function () {
+				delete entity['kv'];
+				delete entity['p'];
+				delete entity['c'];
+				delete entity['s'];
+			});
+			return p.call(entity, props);
+		}
+	}
+	let func = new Function('require', docSource);
+	let doc = func(requireMethod);
+	return doc;
 }

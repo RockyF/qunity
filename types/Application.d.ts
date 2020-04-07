@@ -8,30 +8,41 @@ export interface AdaptorOptions {
     addDisplayFunc: (node: IEntity, parent: IEntity) => void;
     traverseFunc: (node: IEntity, callback: (node: any) => boolean | void) => void;
     bubblingFunc: (node: IEntity, callback: (node: any) => boolean | void) => void;
-    loadResourceFunc: (configs: any, onProgress?: any, onComplete?: any) => void;
-    getResFunc: (name: any) => any;
+    loadAssetFunc: (config: any, onComplete: (res: any, opt: any) => void) => void;
     protocols?: {
         [key: string]: (app: Application, key: string, value: any, pid?: number) => any;
     };
+    context?: any;
 }
 /**
  * 应用
  */
 export declare class Application {
-    private _options;
+    private _launchOptions;
+    private _adaptorOptions;
     private _componentDefs;
     private _entityDefs;
     private _manifest;
     private _sceneConfigCache;
+    private _assetsManager;
     entityMap: {};
     /**
-     * 配置
+     * 启动配置
      */
-    get options(): AdaptorOptions;
+    get launchOptions(): any;
+    /**
+     * 适配配置
+     */
+    get adaptorOptions(): AdaptorOptions;
+    /**
+     * 获取上下文
+     */
+    get context(): any;
     /**
      * 舞台实例
      */
     get stage(): any;
+    constructor();
     /**
      * 启动
      * @param options
@@ -53,6 +64,7 @@ export declare class Application {
      * @param onComplete
      */
     private loadScene;
+    _instantiateScene(sceneConfig: any, callback: any): void;
     /**
      * 启动场景
      * @param name
@@ -71,7 +83,7 @@ export declare class Application {
      * 实例化场景或者预制体
      * @param docConfig
      */
-    instantiate(docConfig: any): IEntity;
+    instantiate(docConfig: any): any;
     /**
      * 注册组件类
      * @param id
@@ -100,6 +112,10 @@ export declare class Application {
      */
     createEntity(type: string): IEntity;
     /**
+     * 获取全部已注册的实体定义
+     */
+    get entityDefs(): any;
+    /**
      * 添加显示节点
      * @param node
      * @param parent
@@ -118,17 +134,23 @@ export declare class Application {
      */
     bubblingDisplayNode(node: IEntity, callback: (node: any) => boolean | void): void;
     /**
+     * 加载单项资源
+     * @param config
+     * @param onComplete
+     */
+    loadAsset(config: any, onComplete?: any): void;
+    /**
      * 加载资源
      * @param configs
      * @param onProgress
      * @param onComplete
      */
-    loadResource(configs: any, onProgress?: any, onComplete?: any): void;
+    loadAssets(configs: any, onProgress?: any, onComplete?: any): void;
     /**
      * 获取资源
-     * @param name
+     * @param uuid
      */
-    getRes(name: any): any;
+    getAsset(uuid: string): any;
     /**
      * 主循环方法，需要在适配器的实现中调用
      * @param delta

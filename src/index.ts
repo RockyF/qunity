@@ -7,6 +7,8 @@ export * from './HashObject'
 export * from './Component'
 export * from './ComponentManager'
 
+export * from './vectors'
+
 export * from './EntityAdaptor'
 
 export * from './IEntity'

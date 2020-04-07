@@ -5,7 +5,7 @@
 import {IEntityAdaptor} from "./EntityAdaptor";
 import {IEntity} from "./IEntity";
 import {instantiate} from "./interpreter";
-import {decodeJson5} from "./utils";
+import {AssetsManager} from "./assets-manager";
 
 export interface AdaptorOptions {
 	stage: any;
@@ -13,37 +13,57 @@ export interface AdaptorOptions {
 	addDisplayFunc: (node: IEntity, parent: IEntity) => void;
 	traverseFunc: (node: IEntity, callback: (node) => boolean | void) => void;
 	bubblingFunc: (node: IEntity, callback: (node) => boolean | void) => void;
-	loadResourceFunc: (configs, onProgress?, onComplete?) => void;
-	getResFunc: (name) => any;
+	loadAssetFunc: (config: any, onComplete: (res, opt) => void) => void;
 	protocols?: {
 		[key: string]: (app: Application, key: string, value: any, pid?: number) => any,
 	};
+	context?: any;
 }
 
 /**
  * 应用
  */
 export class Application {
-	private _options: AdaptorOptions;
+	private _launchOptions: any;
+	private _adaptorOptions: AdaptorOptions;
 	private _componentDefs: any = {};
 	private _entityDefs: any = {};
 	private _manifest: any;
 	private _sceneConfigCache: any = {};
+	private _assetsManager: AssetsManager;
 
 	entityMap = {};
 
 	/**
-	 * 配置
+	 * 启动配置
 	 */
-	get options(): AdaptorOptions {
-		return this._options;
+	get launchOptions(): any {
+		return this._launchOptions;
+	}
+
+	/**
+	 * 适配配置
+	 */
+	get adaptorOptions(): AdaptorOptions {
+		return this._adaptorOptions;
+	}
+
+	/**
+	 * 获取上下文
+	 */
+	get context() {
+		return this._adaptorOptions.context;
 	}
 
 	/**
 	 * 舞台实例
 	 */
 	get stage() {
-		return this._options.stage;
+		return this._adaptorOptions.stage;
+	}
+
+	constructor() {
+		this._assetsManager = new AssetsManager(this);
 	}
 
 	/**
@@ -53,13 +73,13 @@ export class Application {
 	 * @param onComplete
 	 */
 	launch(options?: any, onProgress?, onComplete?) {
-		this.loadResource([
-			{name: 'manifest.json', url: 'manifest.json'}
-		], null, () => {
-			let manifest = this._manifest = this.getRes('manifest.json').data;
-			let entryScene = manifest.scene.entryScene;
-			this.launchScene(entryScene, options, onProgress, onComplete)
-		})
+		this._launchOptions = options;
+		this.loadAsset({url: 'manifest.json'},
+			(asset) => {
+				let manifest = this._manifest = asset;
+				let entryScene = manifest.scene.entryScene;
+				this.launchScene(entryScene, {}, onProgress, onComplete);
+			})
 	}
 
 	/**
@@ -83,24 +103,27 @@ export class Application {
 		let sceneUrl = scenes[name];
 
 		if (this._sceneConfigCache[name]) {
-			onComplete(this._sceneConfigCache[name]);
+			this._instantiateScene(this._sceneConfigCache[name], onComplete);
 			return;
 		}
 
-		this.loadResource([
-			{name: name + '.scene', url: sceneUrl, options: {xhrType: 'text'}},
-		], null, () => {
-			let res = this.getRes('main.scene');
-			let sceneConfig: any = decodeJson5(res.data);
+		this.loadAsset({url: sceneUrl, options: {xhrType: 'text'}},
+			(asset) => {
+				let sceneConfig = asset;
 
-			this._sceneConfigCache[name] = sceneConfig;
+				this._sceneConfigCache[name] = asset;
 
-			setTimeout(() => {
-				this.loadResource(sceneConfig.assets, onProgress, () => {
+				/*this.loadAssets(sceneConfig.assets, onProgress, () => {
 					onComplete(sceneConfig);
-				});
-			})
-		});
+				});*/
+
+				this._instantiateScene(sceneConfig, onComplete);
+			});
+	}
+
+	_instantiateScene(sceneConfig, callback){
+		let scene = this.instantiate(sceneConfig);
+		callback && callback(scene);
 	}
 
 	/**
@@ -111,8 +134,7 @@ export class Application {
 	 * @param onComplete
 	 */
 	launchScene(name: string, options?: any, onProgress?, onComplete?) {
-		this.loadScene(name, onProgress, (sceneConfig) => {
-			let scene = this.instantiate(sceneConfig);
+		this.loadScene(name, onProgress, (scene) => {
 			this.addDisplayNode(scene, this.stage);
 
 			onComplete && onComplete();
@@ -125,7 +147,7 @@ export class Application {
 	 * @return mainLoop 主循环方法
 	 */
 	setupAdaptor(options: AdaptorOptions): (delta: number) => void {
-		this._options = options;
+		this._adaptorOptions = options;
 		return this._mainLoop;
 	}
 
@@ -193,7 +215,7 @@ export class Application {
 
 		if (clazz) {
 			let entity = new clazz();
-			let entityAdaptor = new this._options.EntityAdaptor(entity, this);
+			let entityAdaptor = new this._adaptorOptions.EntityAdaptor(entity, this);
 
 			return entity;
 		} else {
@@ -202,12 +224,19 @@ export class Application {
 	}
 
 	/**
+	 * 获取全部已注册的实体定义
+	 */
+	get entityDefs(){
+		return this._entityDefs;
+	}
+
+	/**
 	 * 添加显示节点
 	 * @param node
 	 * @param parent
 	 */
 	addDisplayNode(node: IEntity, parent: IEntity) {
-		this._options.addDisplayFunc(node, parent);
+		this._adaptorOptions.addDisplayFunc(node, parent);
 	}
 
 	/**
@@ -216,7 +245,7 @@ export class Application {
 	 * @param callback
 	 */
 	traverseDisplayNode(node: IEntity, callback: (node) => boolean | void) {
-		this._options.traverseFunc(node, callback);
+		this._adaptorOptions.traverseFunc(node, callback);
 	}
 
 	/**
@@ -225,7 +254,19 @@ export class Application {
 	 * @param callback
 	 */
 	bubblingDisplayNode(node: IEntity, callback: (node) => boolean | void) {
-		this._options.bubblingFunc(node, callback);
+		this._adaptorOptions.bubblingFunc(node, callback);
+	}
+
+	/**
+	 * 加载单项资源
+	 * @param config
+	 * @param onComplete
+	 */
+	loadAsset(config, onComplete?) {
+		this._adaptorOptions.loadAssetFunc(config, (item, opt) => {
+			this._assetsManager.addAsset(item, opt);
+			onComplete && onComplete(item);
+		});
 	}
 
 	/**
@@ -234,16 +275,28 @@ export class Application {
 	 * @param onProgress
 	 * @param onComplete
 	 */
-	loadResource(configs, onProgress?, onComplete?) {
-		this._options.loadResourceFunc(configs, onProgress, onComplete);
+	loadAssets(configs, onProgress?, onComplete?) {
+		let total = configs.length;
+		let loaded = 0;
+		for (let config of configs) {
+			this.loadAsset(config, onItemComplete)
+		}
+
+		function onItemComplete(item) {
+			loaded++;
+			onProgress && onProgress(loaded, total, item);
+			if (loaded >= total) {
+				onComplete && onComplete();
+			}
+		}
 	}
 
 	/**
 	 * 获取资源
-	 * @param name
+	 * @param uuid
 	 */
-	getRes(name): any {
-		return this._options.getResFunc(name);
+	getAsset(uuid: string): any {
+		return this._assetsManager.getAsset(uuid);
 	}
 
 	/**
@@ -252,7 +305,7 @@ export class Application {
 	 * @private
 	 */
 	private _mainLoop = (delta: number) => {
-		this._options.traverseFunc(this._options.stage, this._onHit.bind(this, delta))
+		this._adaptorOptions.traverseFunc(this._adaptorOptions.stage, this._onHit.bind(this, delta))
 	};
 
 	/**

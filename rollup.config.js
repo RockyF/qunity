@@ -3,6 +3,8 @@
  */
 
 const typescript = require('rollup-plugin-typescript');
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 const {uglify} = require('rollup-plugin-uglify');
 
 const name = 'qunity';
@@ -30,9 +32,13 @@ const options = {
 		}
 	],
 	plugins: [
+		resolve({
+			browser: true,
+		}),
 		typescript({
 			typescript: require('typescript'),
 		}),
+		commonjs(),
 	]
 };
 

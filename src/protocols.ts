@@ -3,32 +3,37 @@
  */
 
 import {Application} from "./Application";
+import {IEntity} from "./IEntity";
 
 //todo script,dynamic
 export enum Protocols {
-	RES = 'res://',
+	ASSET = 'asset://',
 	ENTITY = 'entity://',
 }
 
 export const protocols = {
-	[Protocols.RES]: res,
+	[Protocols.ASSET]: asset,
 	[Protocols.ENTITY]: entity,
 };
 
-function res(app: Application, key: string, value: any): any {
+function asset(app: Application, key: string, value: any): any {
 	let trulyValue;
 
-	const uuid = value.replace(Protocols.RES, '');
-	trulyValue = app.getRes(uuid);
+	const uuid = value.replace(Protocols.ASSET, '');
+	trulyValue = app.getAsset(uuid);
 
 	return trulyValue;
 }
 
-function entity(app: Application, key: string, value: any, pid?: number): any {
+function entity(app: Application, key: string, value: any, pid?: number): IEntity {
 	let trulyValue;
 
-	const uuid = transPrefabUUID(value.replace(Protocols.ENTITY, ''), pid);
-	trulyValue = app.entityMap[uuid];
+	if(value){
+		const uuid = transPrefabUUID(value.replace(Protocols.ENTITY, ''), pid);
+		trulyValue = app.entityMap[uuid];
+	}else{
+		trulyValue = null;
+	}
 
 	return trulyValue;
 }

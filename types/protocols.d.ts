@@ -3,13 +3,13 @@
  */
 import { Application } from "./Application";
 export declare enum Protocols {
-    RES = "res://",
+    ASSET = "asset://",
     ENTITY = "entity://"
 }
 export declare const protocols: {
-    [Protocols.RES]: typeof res;
+    [Protocols.ASSET]: typeof asset;
     [Protocols.ENTITY]: typeof entity;
 };
-declare function res(app: Application, key: string, value: any): any;
+declare function asset(app: Application, key: string, value: any): any;
 declare function entity(app: Application, key: string, value: any, pid?: number): any;
 export {};

@@ -13,8 +13,18 @@ export interface IEntity {
 	 * 激活状态
 	 */
 	readonly active: boolean;
+	/**
+	 * 舞台
+	 */
+	readonly stage: any;
 
 	entityAdaptor: IEntityAdaptor;
+
+	/**
+	 * 实例化视图配置
+	 * @param docConfig
+	 */
+	instantiate(docConfig: any);
 
 	/**
 	 * 设置激活状态

@@ -26,6 +26,11 @@ export class ComponentManager {
 	applyProxy() {
 		let entity = this._entityAdaptor.entity;
 
+		Object.defineProperty(entity, 'stage', {
+			get() {
+				return this.entityAdaptor.app.stage;
+			}
+		});
 		entity.addComponent = (componentId: string | Function, enabled: boolean = true) => {
 			return this.addComponent(componentId, true, enabled);
 		};
@@ -40,6 +45,9 @@ export class ComponentManager {
 		};
 		entity.getComponents = (componentId: string | Function) => {
 			return this.getComponents(componentId);
+		};
+		entity.getAllComponents = () => {
+			return this.getAllComponents();
 		};
 		entity.invokeOnComponents = (methodName: string, args) => {
 			return this.invokeOnComponents(methodName, args);
@@ -122,7 +130,7 @@ export class ComponentManager {
 	 * @param componentId
 	 * @param index
 	 */
-	removeComponent(componentId: any, index?: number) {
+	removeComponent(componentId: any, index: number = 0) {
 		let components;
 		switch (typeof componentId) {
 			case 'string':

@@ -21,6 +21,36 @@ export interface IComponent {
     onMouseMove(e: any): any;
     onMouseUp(e: any): any;
     onMouseUpOutside(e: any): any;
+    /**
+     * 添加组件
+     * @param componentId
+     * @param enabled
+     */
+    addComponent(componentId: string | Function, enabled?: boolean): IComponent;
+    /**
+     * 移除组件
+     * @param componentId
+     * @param index
+     */
+    removeComponent(componentId: string | Function, index?: number): IComponent[];
+    /**
+     * 移除所有组件
+     */
+    removeAllComponents(): any;
+    /**
+     * 获取组件
+     * @param componentId
+     */
+    getComponent(componentId: string | Function): IComponent;
+    /**
+     * 获取组件组
+     * @param componentId
+     */
+    getComponents(componentId: string | Function): IComponent[];
+    /**
+     * 获取全部组件
+     */
+    getAllComponents(): IComponent[];
 }
 /**
  * 组件类
@@ -65,9 +95,9 @@ export declare class Component extends HashObject implements IComponent {
     onDisable(): void;
     /**
      * 时钟更新
-     * @param t
+     * @param delta
      */
-    update(t: number): void;
+    update(delta: number): void;
     /**
      * 当被销毁时
      */
@@ -114,4 +144,10 @@ export declare class Component extends HashObject implements IComponent {
      * @param args
      */
     bubbling(methodName: string, ...args: any[]): void;
+    addComponent(componentId: string | Function, enabled?: boolean): IComponent;
+    getAllComponents(): IComponent[];
+    getComponent(componentId: string | Function): IComponent;
+    getComponents(componentId: string | Function): IComponent[];
+    removeAllComponents(): any;
+    removeComponent(componentId: string | Function, index?: number): IComponent[];
 }

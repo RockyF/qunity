@@ -2,3 +2,5 @@
 /src/
 /dist-distributed/
 /qunity.iml
+/.gitignore
+/rollup.config.js

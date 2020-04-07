@@ -177,7 +177,7 @@
 	    var trulyValue = value;
 	    if (typeof value === 'string') {
 	        var hit = void 0;
-	        var protocolGroups = [protocols, app.options.protocols];
+	        var protocolGroups = [protocols, app.adaptorOptions.protocols];
 	        for (var _i = 0, protocolGroups_1 = protocolGroups; _i < protocolGroups_1.length; _i++) {
 	            var protocols_1 = protocolGroups_1[_i];
 	            for (var protocol in protocols_1) {

@@ -65,7 +65,7 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	/**
 	 * @inheritDoc
 	 */
-	get app(){
+	get app() {
 		return this._app;
 	}
 
@@ -101,13 +101,16 @@ export abstract class EntityAdaptorBase implements IEntityAdaptor {
 	 */
 	applyProxy() {
 		let entity = this._entity;
-		entity.$active = true;
+		entity.$active = false;
 
 		Object.defineProperty(entity, 'active', {
 			get() {
 				return this.entityAdaptor.getActive();
 			}
 		});
+		entity.instantiate = (docType: any) => {
+			return this._app.instantiate(docType);
+		};
 		entity.setActive = this.setActive.bind(this);
 	}
 
