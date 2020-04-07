@@ -274,6 +274,7 @@
 	    };
 	    return QunityEvent;
 	}(HashObject));
+	//# sourceMappingURL=QunityEvent.js.map
 
 	/**
 	 * Created by rockyl on 2020-03-10.
@@ -1940,14 +1941,42 @@
 	    }
 	    return result;
 	}
-	//# sourceMappingURL=utils.js.map
+	/**
+	 * 属性拷贝
+	 * @param target
+	 * @param data
+	 * @param schema
+	 */
+	function copyProp(target, data, schema) {
+	    if (schema) {
+	        for (var key in schema) {
+	            var valueConfig = schema[key];
+	            if (Array.isArray(valueConfig)) {
+	                target[key] = {};
+	                for (var _i = 0, valueConfig_1 = valueConfig; _i < valueConfig_1.length; _i++) {
+	                    var field = valueConfig_1[_i];
+	                    target[key][field] = data[key][field];
+	                }
+	            }
+	            else if (typeof valueConfig === 'string') {
+	                target[valueConfig] = data[valueConfig];
+	            }
+	            else if (typeof valueConfig === 'object') {
+	                target[key] = {};
+	                copyProp(target[key], data[key], valueConfig);
+	            }
+	        }
+	    }
+	}
 
 	exports.Application = Application;
 	exports.Component = Component;
 	exports.ComponentManager = ComponentManager;
 	exports.EntityAdaptorBase = EntityAdaptorBase;
 	exports.HashObject = HashObject;
+	exports.QunityEvent = QunityEvent;
 	exports.Vector2 = Vector2;
+	exports.copyProp = copyProp;
 	exports.decodeJson5 = decodeJson5;
 	exports.deepDirtyFieldDetector = deepDirtyFieldDetector;
 	exports.deepDirtyFieldTrigger = deepDirtyFieldTrigger;

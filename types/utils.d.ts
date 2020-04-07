@@ -65,3 +65,10 @@ export declare function decodeJson5(str: any): any;
  * @return 是否有字段注入
  */
 export declare function injectProp(target: any, data?: any, callback?: Function, ignoreMethod?: boolean, ignoreNull?: boolean): boolean;
+/**
+ * 属性拷贝
+ * @param target
+ * @param data
+ * @param schema
+ */
+export declare function copyProp(target: any, data?: any, schema?: any): void;

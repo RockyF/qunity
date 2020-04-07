@@ -19,6 +19,11 @@ export declare class QunityEvent extends HashObject {
      */
     addListener(callback: any, thisObj?: any, priority?: number, ...params: any[]): void;
     /**
+     * 添加侦听配置
+     * @param config
+     */
+    addListenerConfig(config: any): void;
+    /**
      * 添加单次侦听
      * @param callback
      * @param thisObj

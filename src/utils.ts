@@ -100,3 +100,28 @@ export function injectProp(target: any, data?: any, callback?: Function, ignoreM
 	}
 	return result;
 }
+
+/**
+ * 属性拷贝
+ * @param target
+ * @param data
+ * @param schema
+ */
+export function copyProp(target, data?, schema?) {
+	if (schema) {
+		for (let key in schema) {
+			let valueConfig = schema[key];
+			if (Array.isArray(valueConfig)) {
+				target[key] = {};
+				for (let field of valueConfig) {
+					target[key][field] = data[key][field];
+				}
+			} else if (typeof valueConfig === 'string') {
+				target[valueConfig] = data[valueConfig];
+			} else if (typeof valueConfig === 'object') {
+				target[key] = {};
+				copyProp(target[key], data[key], valueConfig)
+			}
+		}
+	}
+}
