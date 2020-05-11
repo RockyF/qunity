@@ -4,7 +4,7 @@
 
 import {IEntityAdaptor} from "./EntityAdaptor";
 import {IEntity} from "./IEntity";
-import {instantiate} from "./interpreter";
+import {IDoc, instantiate, parseViewDoc} from "./interpreter";
 import {AssetsManager} from "./assets-manager";
 
 export interface AdaptorOptions {
@@ -29,7 +29,7 @@ export class Application {
 	private _componentDefs: any = {};
 	private _entityDefs: any = {};
 	private _manifest: any;
-	private _sceneConfigCache: any = {};
+	private _docCaches: any = {};
 	private _assetsManager: AssetsManager;
 
 	entityMap = {};
@@ -100,30 +100,28 @@ export class Application {
 	 */
 	private loadScene(name: string, onProgress?, onComplete?) {
 		let scenes = this._manifest.scene.scenes;
-		let sceneUrl = scenes[name];
 
-		if (this._sceneConfigCache[name]) {
-			this._instantiateScene(this._sceneConfigCache[name], onComplete);
+		if (this._docCaches[name]) {
+			let scene = this._instantiateScene(this._docCaches[name]);
+			onComplete(scene);
 			return;
 		}
 
+		let sceneUrl = scenes[name];
 		this.loadAsset({url: sceneUrl, options: {xhrType: 'text'}},
 			(asset) => {
-				let sceneConfig = asset;
+				let doc = parseViewDoc(this, asset);
+				this._docCaches[name] = doc;
 
-				this._sceneConfigCache[name] = asset;
-
-				/*this.loadAssets(sceneConfig.assets, onProgress, () => {
-					onComplete(sceneConfig);
-				});*/
-
-				this._instantiateScene(sceneConfig, onComplete);
+				this.loadAssets(doc.assets, onProgress, () => {
+					let scene = this._instantiateScene(doc);
+					onComplete(scene);
+				});
 			});
 	}
 
-	_instantiateScene(sceneConfig, callback){
-		let scene = this.instantiate(sceneConfig);
-		callback && callback(scene);
+	_instantiateScene(doc:IDoc) {
+		return this.instantiate(doc);
 	}
 
 	/**
@@ -153,10 +151,10 @@ export class Application {
 
 	/**
 	 * 实例化场景或者预制体
-	 * @param docConfig
+	 * @param doc
 	 */
-	instantiate(docConfig: any) {
-		return instantiate(this, docConfig);
+	instantiate(doc: IDoc) {
+		return instantiate(this, doc);
 	}
 
 	/**
@@ -226,7 +224,7 @@ export class Application {
 	/**
 	 * 获取全部已注册的实体定义
 	 */
-	get entityDefs(){
+	get entityDefs() {
 		return this._entityDefs;
 	}
 

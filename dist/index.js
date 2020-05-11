@@ -284,18 +284,18 @@
 	/**
 	 * 实例化节点树
 	 * @param app
-	 * @param docSource
+	 * @param doc
 	 */
-	function instantiate(app, docSource) {
-	    if (docSource) {
-	        var doc = parseViewDoc(app, docSource);
+	function instantiate(app, doc) {
+	    if (doc) {
+	        var view = doc.factory();
 	        var pid = void 0;
 	        if (doc.type === 'prefab') {
 	            pid = ++prefabID;
 	        }
-	        setupComponent(app, doc.root, pid);
-	        enableComponent(app, doc.root);
-	        return doc.root;
+	        setupComponent(app, view, pid);
+	        enableComponent(app, view);
+	        return view;
 	    }
 	}
 	/**
@@ -496,11 +496,11 @@
 	        var entityName = entityNames_1[_i];
 	        _loop_1(entityName);
 	    }
-	    var func = new Function('require', docSource);
-	    var doc = func(requireMethod);
-	    return doc;
+	    var func = new Function('require', 'exports', docSource);
+	    var exports = {};
+	    func(requireMethod, exports);
+	    return exports.doc;
 	}
-	//# sourceMappingURL=interpreter.js.map
 
 	var AssetsManager = /** @class */ (function () {
 	    function AssetsManager(app) {
@@ -531,7 +531,7 @@
 	        var _this = this;
 	        this._componentDefs = {};
 	        this._entityDefs = {};
-	        this._sceneConfigCache = {};
+	        this._docCaches = {};
 	        this.entityMap = {};
 	        /**
 	         * 主循环方法，需要在适配器的实现中调用
@@ -616,23 +616,23 @@
 	    Application.prototype.loadScene = function (name, onProgress, onComplete) {
 	        var _this = this;
 	        var scenes = this._manifest.scene.scenes;
-	        var sceneUrl = scenes[name];
-	        if (this._sceneConfigCache[name]) {
-	            this._instantiateScene(this._sceneConfigCache[name], onComplete);
+	        if (this._docCaches[name]) {
+	            var scene = this._instantiateScene(this._docCaches[name]);
+	            onComplete(scene);
 	            return;
 	        }
+	        var sceneUrl = scenes[name];
 	        this.loadAsset({ url: sceneUrl, options: { xhrType: 'text' } }, function (asset) {
-	            var sceneConfig = asset;
-	            _this._sceneConfigCache[name] = asset;
-	            /*this.loadAssets(sceneConfig.assets, onProgress, () => {
-	                onComplete(sceneConfig);
-	            });*/
-	            _this._instantiateScene(sceneConfig, onComplete);
+	            var doc = parseViewDoc(_this, asset);
+	            _this._docCaches[name] = doc;
+	            _this.loadAssets(doc.assets, onProgress, function () {
+	                var scene = _this._instantiateScene(doc);
+	                onComplete(scene);
+	            });
 	        });
 	    };
-	    Application.prototype._instantiateScene = function (sceneConfig, callback) {
-	        var scene = this.instantiate(sceneConfig);
-	        callback && callback(scene);
+	    Application.prototype._instantiateScene = function (doc) {
+	        return this.instantiate(doc);
 	    };
 	    /**
 	     * 启动场景
@@ -659,10 +659,10 @@
 	    };
 	    /**
 	     * 实例化场景或者预制体
-	     * @param docConfig
+	     * @param doc
 	     */
-	    Application.prototype.instantiate = function (docConfig) {
-	        return instantiate(this, docConfig);
+	    Application.prototype.instantiate = function (doc) {
+	        return instantiate(this, doc);
 	    };
 	    /**
 	     * 注册组件类
@@ -1968,6 +1968,7 @@
 	        }
 	    }
 	}
+	//# sourceMappingURL=utils.js.map
 
 	exports.Application = Application;
 	exports.Component = Component;

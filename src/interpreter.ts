@@ -11,22 +11,29 @@ let prefabID: number = 0;
 
 const specialProps = ['enabled', 'active', 'script',];
 
+export interface IDoc {
+	name: string,
+	type: 'scene' | 'prefab',
+	factory: Function,
+	assets: any[],
+}
+
 /**
  * 实例化节点树
  * @param app
- * @param docSource
+ * @param doc
  */
-export function instantiate(app: Application, docSource: any) {
-	if (docSource) {
-		let doc = parseViewDoc(app, docSource);
+export function instantiate(app: Application, doc: IDoc) {
+	if (doc) {
+		let view = doc.factory();
 		let pid;
 		if (doc.type === 'prefab') {
 			pid = ++prefabID;
 		}
-		setupComponent(app, doc.root, pid);
-		enableComponent(app, doc.root, pid);
+		setupComponent(app, view, pid);
+		enableComponent(app, view, pid);
 
-		return doc.root;
+		return view;
 	}
 }
 
@@ -209,7 +216,7 @@ function transBaseProps(app: Application, target: any, field: string, value: any
 }
 
 //parse scene//
-function parseViewDoc(app: Application, docSource): any {
+export function parseViewDoc(app: Application, docSource): IDoc {
 	function p(props) {
 		injectProps(app, this, props);
 
@@ -286,7 +293,8 @@ function parseViewDoc(app: Application, docSource): any {
 			return p.call(entity, props);
 		}
 	}
-	let func = new Function('require', docSource);
-	let doc = func(requireMethod);
-	return doc;
+	let func = new Function('require', 'exports', docSource);
+	let exports: any = {};
+	func(requireMethod, exports);
+	return exports.doc;
 }
