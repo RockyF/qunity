@@ -2,6 +2,7 @@
  * Created by rockyl on 2020-03-08.
  */
 import { IEntity } from "./IEntity";
+import { IDoc } from "./interpreter";
 export interface AdaptorOptions {
     stage: any;
     EntityAdaptor: any;
@@ -23,7 +24,7 @@ export declare class Application {
     private _componentDefs;
     private _entityDefs;
     private _manifest;
-    private _sceneConfigCache;
+    private _docCaches;
     private _assetsManager;
     entityMap: {};
     /**
@@ -64,7 +65,7 @@ export declare class Application {
      * @param onComplete
      */
     private loadScene;
-    _instantiateScene(sceneConfig: any, callback: any): void;
+    _instantiateScene(doc: IDoc): any;
     /**
      * 启动场景
      * @param name
@@ -81,9 +82,9 @@ export declare class Application {
     setupAdaptor(options: AdaptorOptions): (delta: number) => void;
     /**
      * 实例化场景或者预制体
-     * @param docConfig
+     * @param doc
      */
-    instantiate(docConfig: any): any;
+    instantiate(doc: IDoc): any;
     /**
      * 注册组件类
      * @param id

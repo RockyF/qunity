@@ -38,7 +38,6 @@
 	function transPrefabUUID(uuid, pid) {
 	    return pid ? pid + '_' + uuid : uuid;
 	}
-	//# sourceMappingURL=protocols.js.map
 
 	/*! *****************************************************************************
 	Copyright (c) Microsoft Corporation. All rights reserved.
@@ -99,7 +98,6 @@
 	    });
 	    return HashObject;
 	}());
-	//# sourceMappingURL=HashObject.js.map
 
 	/**
 	 * Created by rockyl on 2020-04-07.
@@ -274,7 +272,6 @@
 	    };
 	    return QunityEvent;
 	}(HashObject));
-	//# sourceMappingURL=QunityEvent.js.map
 
 	/**
 	 * Created by rockyl on 2020-03-10.
@@ -518,7 +515,6 @@
 	    };
 	    return AssetsManager;
 	}());
-	//# sourceMappingURL=assets-manager.js.map
 
 	/**
 	 * Created by rockyl on 2020-03-08.
@@ -836,7 +832,6 @@
 	    };
 	    return Application;
 	}());
-	//# sourceMappingURL=Application.js.map
 
 	/**
 	 * Created by rockyl on 2019-07-28.
@@ -1028,7 +1023,6 @@
 	    };
 	    return Component;
 	}(HashObject));
-	//# sourceMappingURL=Component.js.map
 
 	/**
 	 * Created by rockyl on 2019-07-29.
@@ -1340,7 +1334,6 @@
 	    };
 	    return ComponentManager;
 	}());
-	//# sourceMappingURL=ComponentManager.js.map
 
 	/**
 	 * Created by rockyl on 2018/11/9.
@@ -1449,7 +1442,6 @@
 	        }
 	    });
 	}
-	//# sourceMappingURL=dirty-field.js.map
 
 	/**
 	 * Created by rockyl on 2020-04-01.
@@ -1459,7 +1451,6 @@
 	 */
 	function hidden() {
 	}
-	//# sourceMappingURL=editor.js.map
 
 	/**
 	 * Created by rockyl on 2018/11/6.
@@ -1728,7 +1719,6 @@
 	    ], Vector2.prototype, "y", void 0);
 	    return Vector2;
 	}(HashObject));
-	//# sourceMappingURL=vectors.js.map
 
 	/**
 	 * Created by rockyl on 2020-03-07.
@@ -1839,7 +1829,6 @@
 	    };
 	    return EntityAdaptorBase;
 	}());
-	//# sourceMappingURL=EntityAdaptor.js.map
 
 	/**
 	 * Created by rockyl on 2020-03-09.
@@ -1968,7 +1957,6 @@
 	        }
 	    }
 	}
-	//# sourceMappingURL=utils.js.map
 
 	exports.Application = Application;
 	exports.Component = Component;
