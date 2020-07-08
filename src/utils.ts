@@ -125,3 +125,18 @@ export function copyProp(target, data?, schema?) {
 		}
 	}
 }
+
+/**
+ * 对象转搜索字符串
+ * @param obj
+ */
+export function objectStringify(obj) {
+	if (!obj) {
+		return '';
+	}
+	let arr = [];
+	for (let key in obj) {
+		arr.push(key + '=' + obj[key]);
+	}
+	return arr.join('&');
+}

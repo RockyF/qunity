@@ -16,5 +16,6 @@ export * from './IEntity'
 
 export * from './utils'
 export * from './decorators'
+export * from './http-request'
 
 export * from './ReType'
