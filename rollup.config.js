@@ -2,10 +2,10 @@
  * Created by rockyl on 2018/11/16.
  */
 
-const typescript = require('rollup-plugin-typescript');
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 const {uglify} = require('rollup-plugin-uglify');
+const typescript = require('rollup-plugin-typescript');
 
 const name = 'qunity';
 
@@ -14,18 +14,18 @@ const prod = process.env.BUILD === 'production';
 const options = {
 	input: 'src/index.ts',
 	output: [
-		/*{
-			file: `dist/index.js`,
+		{
+			file: prod ? 'dist/bundle.umd.cjs.js' : 'dist/bundle.cjs.js',
 			sourcemap: true,
 			format: 'cjs',
 		},
 		{
-			file: `dist/index.es.js`,
+			file: prod ? 'dist/bundle.umd.esm.js' : 'dist/bundle.esm.js',
 			sourcemap: true,
-			format: 'es',
-		},*/
+			format: 'esm',
+		},
 		{
-			file: prod ? 'dist/index.min.js' : 'dist/index.js',
+			file: prod ? 'dist/bundle.umd.min.js' : 'dist/bundle.umd.js',
 			sourcemap: !prod,
 			format: 'umd',
 			name,
