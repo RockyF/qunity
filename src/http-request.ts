@@ -3,7 +3,7 @@
  */
 
 import 'whatwg-fetch'
-import {stringify} from "querystring";
+import {objectStringify} from "./utils";
 
 /**
  * 调用接口
@@ -38,7 +38,7 @@ export function callApi(uri, {host = '', params = null, method = 'get', credenti
 					break;
 				case 'form':
 					options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-					options.body = stringify(params);
+					options.body = objectStringify(params);
 					break;
 				case 'json':
 					options.headers['Content-Type'] = 'application/json';
@@ -47,7 +47,7 @@ export function callApi(uri, {host = '', params = null, method = 'get', credenti
 			}
 		} else {
 			url += (url.indexOf('?') < 0 ? '?' : '');
-			url += (url.endsWith('?') ? '' : '&') + stringify(params);
+			url += (url.endsWith('?') ? '' : '&') + objectStringify(params);
 		}
 	}
 
