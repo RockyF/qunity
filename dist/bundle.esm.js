@@ -32,6 +32,7 @@ function entity(app, key, value, pid) {
 function transPrefabUUID(uuid, pid) {
     return pid ? pid + '_' + uuid : uuid;
 }
+//# sourceMappingURL=protocols.js.map
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -92,6 +93,7 @@ var HashObject = /** @class */ (function () {
     });
     return HashObject;
 }());
+//# sourceMappingURL=HashObject.js.map
 
 /**
  * Created by rockyl on 2020-04-07.
@@ -266,6 +268,7 @@ var QunityEvent = /** @class */ (function (_super) {
     };
     return QunityEvent;
 }(HashObject));
+//# sourceMappingURL=QunityEvent.js.map
 
 /**
  * Created by rockyl on 2020-03-10.
@@ -492,6 +495,7 @@ function parseViewDoc(app, docSource) {
     func(requireMethod, exports);
     return exports.doc;
 }
+//# sourceMappingURL=interpreter.js.map
 
 var AssetsManager = /** @class */ (function () {
     function AssetsManager(app) {
@@ -509,6 +513,7 @@ var AssetsManager = /** @class */ (function () {
     };
     return AssetsManager;
 }());
+//# sourceMappingURL=assets-manager.js.map
 
 /**
  * Created by rockyl on 2020-03-08.
@@ -826,6 +831,7 @@ var Application = /** @class */ (function () {
     };
     return Application;
 }());
+//# sourceMappingURL=Application.js.map
 
 /**
  * Created by rockyl on 2019-07-28.
@@ -1017,6 +1023,7 @@ var Component = /** @class */ (function (_super) {
     };
     return Component;
 }(HashObject));
+//# sourceMappingURL=Component.js.map
 
 /**
  * Created by rockyl on 2019-07-29.
@@ -1328,6 +1335,7 @@ var ComponentManager = /** @class */ (function () {
     };
     return ComponentManager;
 }());
+//# sourceMappingURL=ComponentManager.js.map
 
 /**
  * Created by rockyl on 2018/11/9.
@@ -1436,6 +1444,7 @@ function mutateProp(data, key, value, onChange) {
         }
     });
 }
+//# sourceMappingURL=dirty-field.js.map
 
 /**
  * Created by rockyl on 2020-04-01.
@@ -1445,6 +1454,7 @@ function mutateProp(data, key, value, onChange) {
  */
 function hidden() {
 }
+//# sourceMappingURL=editor.js.map
 
 /**
  * Created by rockyl on 2018/11/6.
@@ -1713,6 +1723,7 @@ var Vector2 = /** @class */ (function (_super) {
     ], Vector2.prototype, "y", void 0);
     return Vector2;
 }(HashObject));
+//# sourceMappingURL=vectors.js.map
 
 /**
  * Created by rockyl on 2020-03-07.
@@ -1823,6 +1834,7 @@ var EntityAdaptorBase = /** @class */ (function () {
     };
     return EntityAdaptorBase;
 }());
+//# sourceMappingURL=EntityAdaptor.js.map
 
 /**
  * Created by rockyl on 2020-03-09.
@@ -1965,6 +1977,7 @@ function objectStringify(obj) {
     }
     return arr.join('&');
 }
+//# sourceMappingURL=utils.js.map
 
 var support = {
   searchParams: 'URLSearchParams' in self,
@@ -2483,124 +2496,6 @@ if (!self.fetch) {
   self.Response = Response;
 }
 
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-// Copyright Joyent, Inc. and other Node contributors.
-
-// If obj.hasOwnProperty has been overridden, then calling
-// obj.hasOwnProperty(prop) will break.
-// See: https://github.com/joyent/node/issues/1707
-function hasOwnProperty(obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
-}
-
-var decode$1 = function(qs, sep, eq, options) {
-  sep = sep || '&';
-  eq = eq || '=';
-  var obj = {};
-
-  if (typeof qs !== 'string' || qs.length === 0) {
-    return obj;
-  }
-
-  var regexp = /\+/g;
-  qs = qs.split(sep);
-
-  var maxKeys = 1000;
-  if (options && typeof options.maxKeys === 'number') {
-    maxKeys = options.maxKeys;
-  }
-
-  var len = qs.length;
-  // maxKeys <= 0 means that we should not limit keys count
-  if (maxKeys > 0 && len > maxKeys) {
-    len = maxKeys;
-  }
-
-  for (var i = 0; i < len; ++i) {
-    var x = qs[i].replace(regexp, '%20'),
-        idx = x.indexOf(eq),
-        kstr, vstr, k, v;
-
-    if (idx >= 0) {
-      kstr = x.substr(0, idx);
-      vstr = x.substr(idx + 1);
-    } else {
-      kstr = x;
-      vstr = '';
-    }
-
-    k = decodeURIComponent(kstr);
-    v = decodeURIComponent(vstr);
-
-    if (!hasOwnProperty(obj, k)) {
-      obj[k] = v;
-    } else if (Array.isArray(obj[k])) {
-      obj[k].push(v);
-    } else {
-      obj[k] = [obj[k], v];
-    }
-  }
-
-  return obj;
-};
-
-// Copyright Joyent, Inc. and other Node contributors.
-
-var stringifyPrimitive = function(v) {
-  switch (typeof v) {
-    case 'string':
-      return v;
-
-    case 'boolean':
-      return v ? 'true' : 'false';
-
-    case 'number':
-      return isFinite(v) ? v : '';
-
-    default:
-      return '';
-  }
-};
-
-var encode = function(obj, sep, eq, name) {
-  sep = sep || '&';
-  eq = eq || '=';
-  if (obj === null) {
-    obj = undefined;
-  }
-
-  if (typeof obj === 'object') {
-    return Object.keys(obj).map(function(k) {
-      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
-      if (Array.isArray(obj[k])) {
-        return obj[k].map(function(v) {
-          return ks + encodeURIComponent(stringifyPrimitive(v));
-        }).join(sep);
-      } else {
-        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
-      }
-    }).join(sep);
-
-  }
-
-  if (!name) return '';
-  return encodeURIComponent(stringifyPrimitive(name)) + eq +
-         encodeURIComponent(stringifyPrimitive(obj));
-};
-
-var querystring = createCommonjsModule(function (module, exports) {
-
-exports.decode = exports.parse = decode$1;
-exports.encode = exports.stringify = encode;
-});
-var querystring_1 = querystring.decode;
-var querystring_2 = querystring.parse;
-var querystring_3 = querystring.encode;
-var querystring_4 = querystring.stringify;
-
 /**
  * Created by rockyl on 2020-05-15.
  */
@@ -2638,7 +2533,7 @@ function callApi(uri, _a) {
                     break;
                 case 'form':
                     options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-                    options.body = querystring_4(params);
+                    options.body = objectStringify(params);
                     break;
                 case 'json':
                     options.headers['Content-Type'] = 'application/json';
@@ -2648,7 +2543,7 @@ function callApi(uri, _a) {
         }
         else {
             url += (url.indexOf('?') < 0 ? '?' : '');
-            url += (url.endsWith('?') ? '' : '&') + querystring_4(params);
+            url += (url.endsWith('?') ? '' : '&') + objectStringify(params);
         }
     }
     return fetch(url, options)
